@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
 import { Preview } from './preview';
@@ -37,5 +37,17 @@ describe('Preview', () => {
 
   it('renders empty markdown without crashing', () => {
     expect(() => render(<Preview markdown="" />)).not.toThrow();
+  });
+
+  it('typesets maths once KaTeX has loaded, showing the source until then', async () => {
+    const { container } = render(<Preview markdown="$x = 1$" />);
+
+    // The decision this component makes: render immediately with the source visible,
+    // fetch the typesetter, render again. Nobody waits on a spinner for a quarter of a
+    // megabyte, and a document with no maths never fetches it at all.
+    expect(container.querySelector('.katex')).toBeNull();
+    expect(container.querySelector('.language-math')).not.toBeNull();
+
+    await waitFor(() => expect(container.querySelector('.katex')).not.toBeNull());
   });
 });

@@ -99,13 +99,15 @@ The font list spans sans _and_ serif deliberately — five near-identical sans f
 
 ## Assets and the privacy claim
 
-Fonts and code themes load from CDNs at runtime — bundling every typeface and theme would ship megabytes so each user can use two. The **default font is bundled**, so first paint is instant and the default experience never flashes unstyled.
+Fonts and code themes load from CDNs at runtime — bundling every typeface and theme would ship megabytes so each user can use two. The **defaults are bundled** — font and code theme both — so first paint is instant and the default experience never flashes unstyled.
 
 The promise is about **content**: document text, styles, and images are never transmitted, and there's no account, sync, or analytics. We do **not** claim "offline" or "zero third-party requests" — neither is true, both are trivially disprovable in devtools, and an inaccurate privacy claim is worse than a modest accurate one.
 
 ## Key mechanisms
 
-- **Rendering** — `Markdown → remark (GFM, math) → rehype (highlight, mermaid placeholders, katex) → React`. Debounced against typing. Mermaid renders asynchronously into placeholders so a slow diagram never blocks text.
+- **Rendering** — `Markdown → remark (GFM, math) → rehype (slugs, highlight, mermaid placeholders, katex) → hast → React`. Stopping at hast keeps the pipeline framework-free and gives the preview and the HTML exporter one shared source, so they cannot drift. Synchronous, and measured fast enough not to need debouncing — 2.5 ms for a dense document, no dropped frames while typing. Mermaid renders asynchronously into placeholders so a slow diagram never blocks text.
+- **Weight that only some documents carry** — KaTeX is a quarter of a megabyte and most technical documents have no maths, so it loads only once a document proves it needs one; until then the TeX shows as its own source. Mermaid will work the same way. Highlighting, by contrast, is eager: nearly every technical document has code in it.
+- **Raw HTML in Markdown is dropped**, not rendered. Supporting `<details>` and friends needs `rehype-raw` plus a sanitisation policy, and its own answer for what a collapsed block means on paper. Deferred deliberately, not overlooked.
 - **Styling** — CSS custom properties set on the document container, consumed by a static stylesheet. Changing a setting updates a few variables; no stylesheet regeneration. The same variables drive screen, print, and HTML export, so all three match by construction.
 - **PDF** — `window.print()` with a print stylesheet that hides the app chrome. `@page` for size and margins; `break-inside: avoid` on code blocks, tables, images, and diagrams; orphan and widow control. This is the area most likely to need iteration.
 - **Persistence** — one active document plus styles in `localStorage`, debounced. `.md` import/export is the portability mechanism.
@@ -125,8 +127,8 @@ The repo starts private and goes public at M3, the point where the first impress
 A free account can't serve Pages from a private repo, or protect its branches — so until M3, CI reports but nothing enforces it, and `main` is pushable. Going public turns both on: add the Pages deploy, and a ruleset requiring CI to pass before merge.
 
 - [x] **M0** — CI on pull requests → _every commit lands green_
-- [ ] **M1** — Walking skeleton: editor + preview + print to PDF, deliberately ugly → _the full path works_
-- [ ] **M2** — Rendering pipeline: GFM, code highlighting, math → _real documents render correctly_
+- [x] **M1** — Walking skeleton: editor + preview + print to PDF, deliberately ugly → _the full path works_
+- [x] **M2** — Rendering pipeline: GFM, code highlighting, math → _real documents render correctly_
 - [ ] **M3** — The default design: tokens, bundled font, CSS variables → _it looks genuinely good_; go public, add the Pages deploy
 - [ ] **M4** — Print quality: `@page`, break rules, orphans and widows → _PDFs paginate properly_
 - [ ] **M5** — The five controls → _adjustable_

@@ -36,5 +36,14 @@
   .print-root {
     max-width: none;
     padding: 0;
+
+    /*
+     * Chrome drops backgrounds and prints most colour as black when it thinks it is
+     * saving ink. That would take syntax highlighting with it, so the one thing M2 adds
+     * would vanish in the one output that matters. Page size, margins and break control
+     * are still M4's.
+     */
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
   }
 }
