@@ -13,7 +13,10 @@
     "react/react-in-jsx-scope": "off",
     "import/no-cycle": "error",
     // Stylesheet and font imports are side-effect imports by design.
-    "import/no-unassigned-import": ["error", { "allow": ["**/*.css", "@fontsource*/**"] }],
+    "import/no-unassigned-import": [
+      "error",
+      { "allow": ["**/*.css", "@fontsource*/**", "**/jest-dom/**"] }
+    ],
     "no-console": ["error", { "allow": ["warn", "error"] }],
     "no-unused-vars": ["error", { "argsIgnorePattern": "^_", "varsIgnorePattern": "^_" }]
   },
