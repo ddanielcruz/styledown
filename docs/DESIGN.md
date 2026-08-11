@@ -120,9 +120,11 @@ The promise is about **content**: document text, styles, and images are never tr
 
 Risk first. The two things that could sink this are _bad PDF pagination_ and _a default that doesn't look good_ — so both get proven early instead of discovered at the end.
 
-The repo starts private and goes public at M3, the point where the first impression is a document worth looking at rather than a scaffold. Pages can't serve a private repo on a free account, so the deploy rides along with that switch. Public well before launch, announced only at the end.
+The repo starts private and goes public at M3, the point where the first impression is a document worth looking at rather than a scaffold. Public well before launch, announced only at the end.
 
-- [ ] **M0** — CI on pull requests → _every commit lands green_
+A free account can't serve Pages from a private repo, or protect its branches — so until M3, CI reports but nothing enforces it, and `main` is pushable. Going public turns both on: add the Pages deploy, and a ruleset requiring CI to pass before merge.
+
+- [x] **M0** — CI on pull requests → _every commit lands green_
 - [ ] **M1** — Walking skeleton: editor + preview + print to PDF, deliberately ugly → _the full path works_
 - [ ] **M2** — Rendering pipeline: GFM, code highlighting, math → _real documents render correctly_
 - [ ] **M3** — The default design: tokens, bundled font, CSS variables → _it looks genuinely good_; go public, add the Pages deploy
