@@ -118,12 +118,14 @@ The promise is about **content**: document text, styles, and images are never tr
 
 ## Build order
 
-Risk first. The two things that could sink this are _bad PDF pagination_ and _a default that doesn't look good_ — so both get proven early instead of discovered at the end. Deployment is live from M0; the app is public throughout and only _announced_ at the end.
+Risk first. The two things that could sink this are _bad PDF pagination_ and _a default that doesn't look good_ — so both get proven early instead of discovered at the end.
 
-- [ ] **M0** — CI, Pages deploy, Vitest → _a live URL exists_
+The repo starts private and goes public at M3, the point where the first impression is a document worth looking at rather than a scaffold. Pages can't serve a private repo on a free account, so the deploy rides along with that switch. Public well before launch, announced only at the end.
+
+- [ ] **M0** — CI on pull requests → _every commit lands green_
 - [ ] **M1** — Walking skeleton: editor + preview + print to PDF, deliberately ugly → _the full path works_
 - [ ] **M2** — Rendering pipeline: GFM, code highlighting, math → _real documents render correctly_
-- [ ] **M3** — The default design: tokens, bundled font, CSS variables → _it looks genuinely good_
+- [ ] **M3** — The default design: tokens, bundled font, CSS variables → _it looks genuinely good_; go public, add the Pages deploy
 - [ ] **M4** — Print quality: `@page`, break rules, orphans and widows → _PDFs paginate properly_
 - [ ] **M5** — The five controls → _adjustable_
 - [ ] **M6** — Persistence, `.md` import/export → _work survives a refresh_

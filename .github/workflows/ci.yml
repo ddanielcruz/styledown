@@ -1,0 +1,62 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+# A new push to the same branch makes the in-flight run obsolete, so cancel it.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    name: CI
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      # Must precede setup-node: `cache: pnpm` needs the pnpm binary to resolve the store
+      # path. Version comes from the `packageManager` field in package.json.
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Ordered cheapest first, so an obvious failure reports in seconds rather than
+      # after a build. Each step runs regardless of earlier failures, so one push
+      # surfaces every problem instead of one per re-run.
+      - name: Format
+        if: '!cancelled()'
+        run: pnpm format:check
+
+      - name: Lint
+        if: '!cancelled()'
+        run: pnpm lint
+
+      - name: Check types
+        if: '!cancelled()'
+        run: pnpm check-types
+
+      - name: Test
+        if: '!cancelled()'
+        run: pnpm test
+
+      - name: Build
+        if: '!cancelled()'
+        run: pnpm build
