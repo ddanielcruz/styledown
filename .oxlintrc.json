@@ -1,0 +1,71 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["oxc", "typescript", "react", "jsx-a11y", "import"],
+  "categories": {
+    "correctness": "error",
+    "suspicious": "error",
+    "perf": "warn"
+  },
+  "rules": {
+    "react/rules-of-hooks": "error",
+    "react/only-export-components": ["warn", { "allowConstantExport": true }],
+    // The automatic JSX runtime ("jsx": "react-jsx") means React needs no import.
+    "react/react-in-jsx-scope": "off",
+    "import/no-cycle": "error",
+    // Stylesheet and font imports are side-effect imports by design.
+    "import/no-unassigned-import": ["error", { "allow": ["**/*.css", "@fontsource*/**"] }],
+    "no-console": ["error", { "allow": ["warn", "error"] }],
+    "no-unused-vars": ["error", { "argsIgnorePattern": "^_", "varsIgnorePattern": "^_" }]
+  },
+  "settings": {
+    "jsx-a11y": {
+      "components": { "Button": "button", "Link": "a" }
+    }
+  },
+  "overrides": [
+    {
+      "files": ["src/lib/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "react",
+                  "react-dom",
+                  "react/*",
+                  "react-dom/*",
+                  "@base-ui/react",
+                  "@base-ui/react/*",
+                  "@/components",
+                  "@/components/*",
+                  "@/hooks",
+                  "@/hooks/*",
+                  "@/state",
+                  "@/state/*",
+                  "**/components/**",
+                  "**/hooks/**"
+                ],
+                "message": "src/lib must stay framework-free and testable without rendering — see docs/DESIGN.md."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["**/*.{test,spec}.{ts,tsx}", "**/test/**"],
+      "plugins": ["vitest"],
+      "rules": {
+        "no-console": "off"
+      }
+    },
+    {
+      "files": ["src/components/ui/**"],
+      "rules": {
+        "react/only-export-components": "off"
+      }
+    }
+  ]
+}
