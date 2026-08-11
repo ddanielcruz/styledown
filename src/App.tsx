@@ -17,7 +17,7 @@ function App() {
 
       {/* Sizes are strings on purpose: this library reads a bare number as pixels. */}
       <Group orientation="horizontal" className="app-panels flex-1">
-        <Panel defaultSize="45" minSize="25">
+        <Panel defaultSize="50" minSize="25">
           <div className="no-print h-full overflow-auto">
             <Editor value={markdown} onChange={setMarkdown} />
           </div>
@@ -25,7 +25,7 @@ function App() {
 
         <Separator className="no-print bg-border hover:bg-ring w-px transition-colors" />
 
-        <Panel defaultSize="55" minSize="25">
+        <Panel defaultSize="50" minSize="25">
           <div className="print-pane h-full overflow-auto bg-white">
             <Preview markdown={markdown} />
           </div>
