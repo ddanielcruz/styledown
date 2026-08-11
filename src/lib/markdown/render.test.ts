@@ -14,6 +14,19 @@ function find(node: Root | Element, tagName: string): Element | undefined {
   return undefined;
 }
 
+/** Every element with the given tag name, in document order. */
+function findAll(node: Root | Element, tagName: string): Element[] {
+  const found: Element[] = [];
+
+  for (const child of node.children) {
+    if (child.type !== 'element') continue;
+    if (child.tagName === tagName) found.push(child);
+    found.push(...findAll(child, tagName));
+  }
+
+  return found;
+}
+
 /** Concatenated text of a subtree, which is what a reader actually sees. */
 function textOf(node: Root | Element): string {
   return node.children
@@ -23,6 +36,11 @@ function textOf(node: Root | Element): string {
       return '';
     })
     .join('');
+}
+
+function classesOf(element: Element): string[] {
+  const className = element.properties?.className;
+  return Array.isArray(className) ? className.map(String) : [];
 }
 
 describe('renderMarkdown', () => {
@@ -64,12 +82,6 @@ describe('renderMarkdown', () => {
     expect(textOf(code)).toBe('const x = 1;\n');
   });
 
-  it('records the fence language as a class, for M2 to highlight from', () => {
-    const code = find(renderMarkdown('```ts\nconst x = 1;\n```'), 'code')!;
-
-    expect(code.properties?.className).toContain('language-ts');
-  });
-
   it('renders links with their href', () => {
     const anchor = find(renderMarkdown('[Styledown](https://example.com)'), 'a')!;
 
@@ -86,5 +98,81 @@ describe('renderMarkdown', () => {
     // stay usable outside a browser (tests, and the export path at M7).
     expect(typeof document).toBe('undefined');
     expect(() => renderMarkdown('# ok')).not.toThrow();
+  });
+});
+
+describe('GitHub-flavoured markdown', () => {
+  it('renders tables with a header row and body rows', () => {
+    const table = find(renderMarkdown('| Size | Width |\n| --- | --- |\n| A4 | 210mm |'), 'table')!;
+
+    expect(findAll(find(table, 'thead')!, 'th').map(textOf)).toEqual(['Size', 'Width']);
+    expect(findAll(find(table, 'tbody')!, 'td').map(textOf)).toEqual(['A4', '210mm']);
+  });
+
+  it('renders strikethrough', () => {
+    expect(textOf(find(renderMarkdown('~~withdrawn~~'), 'del')!)).toBe('withdrawn');
+  });
+
+  it('renders task lists as checkboxes that reflect their state', () => {
+    const boxes = findAll(renderMarkdown('- [x] shipped\n- [ ] pending'), 'input');
+
+    expect(boxes.map((box) => box.properties?.checked)).toEqual([true, false]);
+    // Disabled, so the rendered document stays a document rather than a form.
+    expect(boxes.every((box) => box.properties?.disabled)).toBe(true);
+  });
+
+  it('links bare URLs', () => {
+    const anchor = find(renderMarkdown('See https://example.com for the details.'), 'a')!;
+
+    expect(anchor.properties?.href).toBe('https://example.com');
+  });
+
+  it('collects footnotes into their own section', () => {
+    const section = find(renderMarkdown('A claim[^1]\n\n[^1]: The evidence.'), 'section')!;
+
+    expect(section.properties?.dataFootnotes).toBe(true);
+    expect(textOf(section)).toContain('The evidence.');
+  });
+});
+
+describe('syntax highlighting', () => {
+  it('marks up the tokens of a fenced block without changing its text', () => {
+    const code = find(renderMarkdown('```ts\nconst x = 1;\n```'), 'code')!;
+    const tokens = findAll(code, 'span').filter((span) =>
+      classesOf(span).some((name) => name.startsWith('hljs-')),
+    );
+
+    expect(classesOf(code)).toContain('hljs');
+    expect(tokens.length).toBeGreaterThan(0);
+    // The whole point: highlighting is markup around the code, never a rewrite of it.
+    expect(textOf(code)).toBe('const x = 1;\n');
+  });
+
+  it('leaves a fence with no language alone rather than guessing at one', () => {
+    const code = find(renderMarkdown('```\nnot really any language\n```'), 'code')!;
+
+    expect(classesOf(code)).not.toContain('hljs');
+  });
+
+  it('keeps code verbatim when the language is unknown', () => {
+    const tree = renderMarkdown('```klingon\nnuqneH\n```');
+
+    expect(textOf(find(tree, 'code')!)).toBe('nuqneH\n');
+  });
+});
+
+describe('heading ids', () => {
+  it('slugs headings so in-document links resolve', () => {
+    const heading = find(renderMarkdown('## Getting started'), 'h2')!;
+
+    expect(heading.properties?.id).toBe('getting-started');
+  });
+
+  it('keeps repeated headings distinct', () => {
+    const ids = findAll(renderMarkdown('# Notes\n\n# Notes'), 'h1').map(
+      (heading) => heading.properties?.id,
+    );
+
+    expect(ids).toEqual(['notes', 'notes-1']);
   });
 });
