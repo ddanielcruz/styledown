@@ -1,0 +1,40 @@
+/*
+ * Turning the app into a document.
+ *
+ * On screen this is a fixed-height shell with two independently scrolling panes. A
+ * printed page is neither fixed-height nor scrollable, so the main job here is
+ * un-constraining every ancestor of the document — otherwise the browser clips the
+ * print at one page, which is the classic failure for this kind of layout.
+ *
+ * M1 only needs "recognisably the document". Page size, margins, and break control
+ * belong to M4.
+ */
+@media print {
+  /* App chrome: the top bar, the editor pane, the drag handle. */
+  .no-print {
+    display: none !important;
+  }
+
+  /*
+   * Every ancestor of the document, whatever the nesting happens to be. `:has()` is
+   * doing real work here: the panel library inserts its own wrappers with inline flex
+   * sizing, so a hand-written chain of selectors silently misses a level and the
+   * document prints clipped to a single page. This cannot miss one.
+   *
+   * It matches only ancestors — nothing inside the document contains `.print-root` —
+   * so the document's own layout is left alone.
+   */
+  :has(.print-root) {
+    display: block !important;
+    position: static !important;
+    width: auto !important;
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  .print-root {
+    max-width: none;
+    padding: 0;
+  }
+}
