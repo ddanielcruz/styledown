@@ -21,5 +21,5 @@ export function Preview({ markdown }: PreviewProps) {
     [markdown],
   );
 
-  return <article className="print-root mx-auto max-w-[46rem] px-8 py-10">{content}</article>;
+  return <article className="print-root mx-auto max-w-184 px-8 py-10">{content}</article>;
 }
