@@ -148,10 +148,15 @@ describe('syntax highlighting', () => {
     expect(textOf(code)).toBe('const x = 1;\n');
   });
 
-  it('leaves a fence with no language alone rather than guessing at one', () => {
+  it('leaves a fence with no language unhighlighted, but still dressed as a code block', () => {
     const code = find(renderMarkdown('```\nnot really any language\n```'), 'code')!;
 
-    expect(classesOf(code)).not.toContain('hljs');
+    // No guess at the language, and so no tokens to colour…
+    expect(classesOf(code).some((name) => name.startsWith('language-'))).toBe(false);
+    expect(findAll(code, 'span')).toHaveLength(0);
+    // …but the theme hangs its padding and background off `.hljs`, and a block missing
+    // that reads as an outlier — worse still under a dark theme.
+    expect(classesOf(code)).toContain('hljs');
   });
 
   it('keeps code verbatim when the language is unknown', () => {
