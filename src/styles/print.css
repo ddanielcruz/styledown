@@ -6,8 +6,11 @@
  * un-constraining every ancestor of the document — otherwise the browser clips the
  * print at one page, which is the classic failure for this kind of layout.
  *
- * M1 only needs "recognisably the document". Page size, margins, and break control
- * belong to M4.
+ * The document's own print behaviour — its margins, its break control, the table that
+ * stops being a scroll box — lives in `document.css` instead, because an exported HTML
+ * file has to print correctly with no app around it. This file is only about the app.
+ *
+ * Page size and margins still belong to M4.
  */
 @media print {
   /* App chrome: the top bar, the editor pane, the drag handle. */
@@ -21,27 +24,29 @@
    * sizing, so a hand-written chain of selectors silently misses a level and the
    * document prints clipped to a single page. This cannot miss one.
    *
-   * It matches only ancestors — nothing inside the document contains `.print-root` —
+   * It matches only ancestors — nothing inside the document contains `.styledown-doc` —
    * so the document's own layout is left alone.
    */
-  :has(.print-root) {
+  :has(.styledown-doc) {
     display: block !important;
     position: static !important;
     width: auto !important;
     height: auto !important;
     max-height: none !important;
+    /* The preview pane insets the sheet against its backdrop; on paper that inset would
+       print as a second margin on top of the page's own. */
+    padding: 0 !important;
     overflow: visible !important;
+    /* And the backdrop it sits on is app chrome too — it must not paint on paper, even
+       for a reader who has turned background graphics on. */
+    background: none !important;
   }
 
-  .print-root {
-    max-width: none;
-    padding: 0;
-
+  .styledown-doc {
     /*
      * Chrome drops backgrounds and prints most colour as black when it thinks it is
      * saving ink. That would take syntax highlighting with it, so the one thing M2 adds
-     * would vanish in the one output that matters. Page size, margins and break control
-     * are still M4's.
+     * would vanish in the one output that matters.
      */
     print-color-adjust: exact;
     -webkit-print-color-adjust: exact;

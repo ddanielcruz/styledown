@@ -1,0 +1,460 @@
+/*
+ * The document's own stylesheet — the design itself.
+ *
+ * Three things about how this file is written are deliberate:
+ *
+ * 1. It is plain CSS. No `@apply`, no utilities, no `@layer`. Unlayered rules beat every
+ *    Tailwind layer in the cascade, so this wins over preflight — which resets headings
+ *    to `font-size: inherit` and strips list markers — without a single `!important`.
+ *    It also means M7's HTML exporter can read the file as text and inline it.
+ * 2. Every rule is scoped under `.styledown-doc`. The scope keeps the app's chrome out
+ *    of the document's business, and it also outranks the other unlayered stylesheets we
+ *    load — the highlight.js theme and KaTeX — which would otherwise win or lose on
+ *    import order, and KaTeX's order is decided at runtime by a lazy import.
+ * 3. Spacing is `calc(var(--doc-font-size) * n)` rather than `em`. `em` inside a heading
+ *    compounds against the heading's own size, so `2em` above an `h2` would be three
+ *    times the base, not twice, and the vertical rhythm would drift with the type scale.
+ *    Type sizes stay in `em`, where that compounding is exactly what you want.
+ *
+ * The `--doc-*` values below are defaults. `toCssVariables()` overrides the five a reader
+ * can actually change (see `src/lib/styles/`); the rest are fixed tokens and live here.
+ */
+
+.styledown-doc {
+  /* — The five settings, defaulted so the stylesheet stands alone — */
+  --doc-font-body: 'Inter Variable', Inter, ui-sans-serif, system-ui, sans-serif;
+  --doc-font-size: 16px;
+  --doc-accent: #475569;
+  --doc-page-width: 210mm;
+  --doc-page-margin: 22mm;
+
+  /* — Fixed tokens — */
+
+  /* Bundled, so code sets in the same face whatever machine exported the PDF. */
+  --doc-font-mono: 'JetBrains Mono Variable', ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /* Ink, not black: pure #000 on white is harsh in print as well as on screen. */
+  --doc-ink: #1c1f24;
+  --doc-ink-muted: #5c6470;
+  --doc-rule: #e4e7ec;
+  --doc-rule-strong: #cdd2da;
+  --doc-surface: #f2f4f7;
+
+  --doc-leading: 1.7;
+  --doc-radius: 6px;
+}
+
+/* Own the box model rather than inheriting whatever page the export lands on. */
+.styledown-doc {
+  box-sizing: border-box;
+}
+
+.styledown-doc *,
+.styledown-doc *::before,
+.styledown-doc *::after {
+  box-sizing: inherit;
+}
+
+/*
+ * The sheet.
+ *
+ * True page width when the pane is wide, and the full pane when it is narrow — so the
+ * measure is always the one a real page gives you and nothing ever scrolls sideways.
+ * It is not pretending to paginate: there are no page breaks on screen, and inventing
+ * them is M4's job.
+ */
+.styledown-doc {
+  width: min(100%, var(--doc-page-width));
+  margin-inline: auto;
+  /*
+   * The side margins give way once the sheet is narrower than a real page. At full width
+   * the `min()` always picks the page margin, so the printed measure is untouched; below
+   * about 690px the margin would otherwise eat two thirds of the column and leave a
+   * ribbon of text. A pane too narrow to show a page should still show the writing.
+   */
+  padding: var(--doc-page-margin) min(var(--doc-page-margin), 12%);
+  background: #fff;
+  box-shadow:
+    0 1px 2px rgb(16 24 40 / 6%),
+    0 8px 24px rgb(16 24 40 / 8%);
+
+  color: var(--doc-ink);
+  font-family: var(--doc-font-body);
+  font-size: var(--doc-font-size);
+  line-height: var(--doc-leading);
+  /* Inter's defaults leave figures and punctuation looser than a document wants. */
+  font-feature-settings: 'cv05', 'ss01';
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+/*
+ * The document owns its outer edges — the sheet's padding is the page margin, so nothing
+ * inside may add to it at the top or bottom.
+ */
+.styledown-doc > :first-child {
+  margin-top: 0;
+}
+
+.styledown-doc > :last-child {
+  margin-bottom: 0;
+}
+
+/* — Headings — */
+
+.styledown-doc h1,
+.styledown-doc h2,
+.styledown-doc h3,
+.styledown-doc h4,
+.styledown-doc h5,
+.styledown-doc h6 {
+  font-family: var(--doc-font-body);
+  line-height: 1.25;
+  /* Far more space above than below: a heading belongs to what follows it. */
+  margin-bottom: calc(var(--doc-font-size) * 0.6);
+  /* Never strand a heading at the foot of a page. Cheap here, load-bearing at M4. */
+  break-after: avoid;
+  break-inside: avoid;
+}
+
+.styledown-doc h1 {
+  font-size: 2.125em;
+  font-weight: 700;
+  /* Optical correction: the larger the type, the looser the default tracking reads. */
+  letter-spacing: -0.022em;
+  margin-top: calc(var(--doc-font-size) * 2.5);
+  margin-bottom: calc(var(--doc-font-size) * 0.75);
+}
+
+.styledown-doc h2 {
+  font-size: 1.5em;
+  font-weight: 650;
+  letter-spacing: -0.014em;
+  margin-top: calc(var(--doc-font-size) * 2.25);
+  /* The hairline is what makes a long technical document scannable. */
+  padding-bottom: calc(var(--doc-font-size) * 0.3);
+  border-bottom: 1px solid var(--doc-rule);
+}
+
+.styledown-doc h3 {
+  font-size: 1.25em;
+  font-weight: 650;
+  letter-spacing: -0.008em;
+  margin-top: calc(var(--doc-font-size) * 1.75);
+  margin-bottom: calc(var(--doc-font-size) * 0.5);
+}
+
+.styledown-doc h4 {
+  font-size: 1.0625em;
+  font-weight: 650;
+  margin-top: calc(var(--doc-font-size) * 1.5);
+  margin-bottom: calc(var(--doc-font-size) * 0.4);
+}
+
+.styledown-doc h5 {
+  font-size: 1em;
+  font-weight: 650;
+  margin-top: calc(var(--doc-font-size) * 1.5);
+  margin-bottom: calc(var(--doc-font-size) * 0.4);
+}
+
+/* By `h6` the scale has run out, so the distinction is colour and case rather than size. */
+.styledown-doc h6 {
+  font-size: 0.9375em;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--doc-ink-muted);
+  margin-top: calc(var(--doc-font-size) * 1.5);
+  margin-bottom: calc(var(--doc-font-size) * 0.4);
+}
+
+/* — Prose — */
+
+.styledown-doc p {
+  margin-top: 0;
+  margin-bottom: calc(var(--doc-font-size) * 1.1);
+}
+
+.styledown-doc strong {
+  font-weight: 650;
+}
+
+.styledown-doc a {
+  color: var(--doc-accent);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+  /* A full-strength underline shouts; softening it keeps the link a link, not a highlight. */
+  text-decoration-color: color-mix(in oklab, var(--doc-accent) 45%, transparent);
+}
+
+.styledown-doc a:hover {
+  text-decoration-color: currentcolor;
+}
+
+.styledown-doc hr {
+  height: 0;
+  border: 0;
+  border-top: 1px solid var(--doc-rule);
+  margin: calc(var(--doc-font-size) * 2.25) 0;
+}
+
+.styledown-doc img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: calc(var(--doc-font-size) * 1.5) auto;
+}
+
+/* No italic: an italic run this long is measurably harder to read than the rule is worth. */
+.styledown-doc blockquote {
+  margin: calc(var(--doc-font-size) * 1.5) 0;
+  padding-left: calc(var(--doc-font-size) * 1.1);
+  border-left: 3px solid var(--doc-rule-strong);
+  color: var(--doc-ink-muted);
+}
+
+.styledown-doc blockquote > :last-child {
+  margin-bottom: 0;
+}
+
+/* — Lists — */
+
+.styledown-doc ul,
+.styledown-doc ol {
+  margin-top: 0;
+  margin-bottom: calc(var(--doc-font-size) * 1.1);
+  padding-left: 1.5em;
+}
+
+.styledown-doc ul {
+  list-style: disc;
+}
+
+.styledown-doc ol {
+  list-style: decimal;
+}
+
+.styledown-doc ul ul {
+  list-style: circle;
+}
+
+.styledown-doc ul ul ul {
+  list-style: square;
+}
+
+.styledown-doc li + li {
+  margin-top: calc(var(--doc-font-size) * 0.35);
+}
+
+/*
+ * A list with blank lines between its items is "loose", and each item's text arrives
+ * wrapped in a `p`. Left alone those paragraphs bring a full paragraph's margin with
+ * them, and the list falls apart into a run of paragraphs.
+ */
+.styledown-doc li p {
+  margin-bottom: calc(var(--doc-font-size) * 0.5);
+}
+
+.styledown-doc li > :last-child {
+  margin-bottom: 0;
+}
+
+/* A nested list belongs to its parent item, so it sits tighter than a sibling would. */
+.styledown-doc li > ul,
+.styledown-doc li > ol {
+  margin-top: calc(var(--doc-font-size) * 0.35);
+  margin-bottom: 0;
+}
+
+.styledown-doc li::marker {
+  color: var(--doc-ink-muted);
+}
+
+/*
+ * A task item loses its marker — the checkbox is the marker. Scoped to the item and not
+ * to the list, because `remark-gfm` puts `contains-task-list` on a list where only *some*
+ * items are tasks, and the plain ones still need their bullets.
+ *
+ * The boxes render disabled (this is a document, not a form), which greys them out, so
+ * the accent is the only thing keeping a ticked box legible.
+ */
+.styledown-doc .task-list-item {
+  list-style: none;
+}
+
+.styledown-doc .task-list-item input {
+  /* Hung back into the marker's slot, so a mixed list still lines up down one edge. */
+  margin-left: -1.4em;
+  margin-right: 0.5em;
+  width: 0.9em;
+  height: 0.9em;
+  accent-color: var(--doc-accent);
+}
+
+/* — Code — */
+
+/*
+ * The highlight.js theme owns the paint: `.hljs` sets the background and every token
+ * colour, and `pre code.hljs` sets the padding. We own the box around it. That split is
+ * what keeps M5's theme control a plain stylesheet swap — the moment we set a background
+ * here, all six themes need a hand-maintained surface to match, and the dark ones break.
+ */
+.styledown-doc pre {
+  margin: calc(var(--doc-font-size) * 1.5) 0;
+  border: 1px solid var(--doc-rule);
+  border-radius: var(--doc-radius);
+  /* The theme's background is on the `code` inside, and square corners would poke out
+   * through the radius. Scrolling lives on that `code`, so clipping here costs nothing. */
+  overflow: hidden;
+  font-family: var(--doc-font-mono);
+  font-size: 0.875em;
+  line-height: 1.6;
+  break-inside: avoid;
+}
+
+/*
+ * Inline code only — `:not(pre) >` is what keeps this off a fenced block. A plain `code`
+ * selector would outrank the theme's `.hljs` on specificity and strip the block's
+ * background and padding, which is invisible under a light theme and catastrophic under
+ * a dark one: a white gutter around a dark strip of text.
+ */
+.styledown-doc :not(pre) > code {
+  font-family: var(--doc-font-mono);
+  /* Mono faces run large at a shared size; 0.875em puts the x-heights back together. */
+  font-size: 0.875em;
+  background: var(--doc-surface);
+  border-radius: 4px;
+  padding: 0.15em 0.35em;
+}
+
+/* Nor should a heading's own weight and colour be undone by a code span inside it. */
+.styledown-doc h1 code,
+.styledown-doc h2 code,
+.styledown-doc h3 code,
+.styledown-doc h4 code,
+.styledown-doc h5 code,
+.styledown-doc h6 code {
+  font-weight: inherit;
+  font-size: 0.9em;
+}
+
+/* — Tables — */
+
+/*
+ * Rules only: no vertical borders, no zebra. Both are noise that a well-set table does
+ * not need, and both cost ink.
+ *
+ * `display: block` is what lets an awkwardly wide table scroll inside its own box rather
+ * than forcing the whole sheet sideways. Print undoes it, below — paper does not scroll.
+ */
+.styledown-doc table {
+  display: block;
+  width: 100%;
+  overflow-x: auto;
+  margin: calc(var(--doc-font-size) * 1.5) 0;
+  border-collapse: collapse;
+  font-size: 0.9375em;
+}
+
+.styledown-doc th,
+.styledown-doc td {
+  padding: 0.5em 0.75em;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid var(--doc-rule);
+}
+
+.styledown-doc thead th {
+  font-weight: 600;
+  border-bottom: 2px solid var(--doc-rule-strong);
+}
+
+.styledown-doc tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+/* — Footnotes — */
+
+.styledown-doc [data-footnotes] {
+  margin-top: calc(var(--doc-font-size) * 2.5);
+  padding-top: calc(var(--doc-font-size) * 1.2);
+  border-top: 1px solid var(--doc-rule);
+  font-size: 0.875em;
+  color: var(--doc-ink-muted);
+}
+
+.styledown-doc [data-footnotes] ol {
+  margin-bottom: 0;
+}
+
+.styledown-doc sup a {
+  text-decoration: none;
+  font-weight: 600;
+}
+
+/*
+ * `remark-gfm` labels the footnote section with `<h2 class="sr-only">Footnotes</h2>`.
+ * Tailwind will not generate `.sr-only` — the class never appears in our source, only in
+ * markup the pipeline produces — so without this rule the heading renders in full.
+ */
+.styledown-doc .sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* — Maths — */
+
+/* KaTeX's own 1.21em towers over the surrounding text; it only needs a little. */
+.styledown-doc .katex {
+  font-size: 1.05em;
+}
+
+.styledown-doc .katex-display {
+  margin: calc(var(--doc-font-size) * 1.5) 0;
+  /* A long equation scrolls in its own box rather than widening the sheet. */
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 0.25em 0;
+}
+
+/*
+ * Print belongs to the document, not to the app shell — an exported HTML file has no app
+ * shell but still has to print correctly. `src/styles/print.css` handles the other half:
+ * hiding the chrome and un-constraining the panes.
+ */
+@media print {
+  .styledown-doc {
+    width: auto;
+    max-width: none;
+    /* The page box supplies the margins once M4 sets it; a second inset would double them. */
+    padding: 0;
+    box-shadow: none;
+    background: none;
+  }
+
+  /* Paper does not scroll, so the table goes back to being a table. */
+  .styledown-doc table {
+    display: table;
+    overflow-x: visible;
+  }
+
+  .styledown-doc thead {
+    /* If a table does break across pages, the reader needs the header on both. */
+    display: table-header-group;
+  }
+
+  .styledown-doc tr,
+  .styledown-doc pre,
+  .styledown-doc blockquote {
+    break-inside: avoid;
+  }
+}

@@ -52,7 +52,7 @@ src/
 │  └─ ui/               # shadcn primitives
 ├─ state/               # Document + styles context
 ├─ hooks/
-└─ styles/              # App CSS, print CSS, bundled default font
+└─ styles/              # App CSS, the document stylesheet, print CSS
 ```
 
 **The one rule that matters:** `src/lib/**` never imports from `src/components/**`. The core is framework-free and testable without rendering anything; the UI is a consumer of it.
@@ -61,9 +61,9 @@ src/
 
 The full typographic system — heading scale, spacing rhythm, table and blockquote treatment, list styling — lives as **fixed design tokens**. Only five values are user-editable.
 
-```ts
-const DESIGN_TOKENS = {/* headings, spacing, table, quote, lists, ... */};
+The fixed tokens live in `src/styles/document.css` as `--doc-*` custom properties, not in a TypeScript object. A fixed token is never computed, validated, or persisted, so an object holding it would only ever serialise back to the same string — and the stylesheet has to be readable as text anyway for the HTML exporter to inline it. `src/lib/styles/` holds the five that move.
 
+```ts
 type DocumentStyles = {
   bodyFont: FontFamily; // shortlist of 5
   fontSize: number; // 14–20px; everything scales from it
@@ -79,7 +79,9 @@ type PersistedState = {
 };
 ```
 
-Name the tokens as though they were already settings — every future control is a token moving into `DocumentStyles`, not a refactor.
+Name the tokens as though they were already settings — every future control is a token moving out of the stylesheet's defaults and into `DocumentStyles`, not a refactor.
+
+`toCssVariables()` turns those five into the `--doc-*` properties the stylesheet reads, set on the document container so a change repaints without regenerating a stylesheet. Two of them have a second consumer: `@page` cannot reliably read custom properties, and its `size` descriptor will not take a `var()` at all, so M4 generates its `@page` rule from `DocumentStyles.page` directly. Same source of truth, two ways out of it. `codeTheme` produces no variable — a highlight.js theme is a whole stylesheet of token colours, so choosing one swaps the `<link>`.
 
 Persisted state is Zod-validated on read, falling back to defaults. A corrupted `localStorage` entry must never produce a broken app.
 
@@ -129,7 +131,7 @@ A free account can't serve Pages from a private repo, or protect its branches �
 - [x] **M0** — CI on pull requests → _every commit lands green_
 - [x] **M1** — Walking skeleton: editor + preview + print to PDF, deliberately ugly → _the full path works_
 - [x] **M2** — Rendering pipeline: GFM, code highlighting, math → _real documents render correctly_
-- [ ] **M3** — The default design: tokens, bundled font, CSS variables → _it looks genuinely good_; go public, add the Pages deploy
+- [x] **M3** — The default design: tokens, bundled font, CSS variables → _it looks genuinely good_; go public, add the Pages deploy
 - [ ] **M4** — Print quality: `@page`, break rules, orphans and widows → _PDFs paginate properly_
 - [ ] **M5** — The five controls → _adjustable_
 - [ ] **M6** — Persistence, `.md` import/export → _work survives a refresh_

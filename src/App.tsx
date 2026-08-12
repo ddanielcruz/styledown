@@ -26,7 +26,9 @@ function App() {
         <Separator className="no-print bg-border hover:bg-ring w-px transition-colors" />
 
         <Panel defaultSize="50" minSize="25">
-          <div className="print-pane h-full overflow-auto bg-white">
+          {/* The backdrop the sheet sits on. It is the pane's, not the document's — the
+              document has to be exportable without it. */}
+          <div className="h-full overflow-auto bg-neutral-100 px-6 py-8">
             <Preview markdown={markdown} />
           </div>
         </Panel>

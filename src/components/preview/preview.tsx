@@ -4,6 +4,7 @@ import { Fragment, jsx, jsxs } from 'react/jsx-runtime';
 import type { Pluggable } from 'unified';
 
 import { containsMath, loadMathPlugin, renderMarkdown } from '@/lib/markdown';
+import { DEFAULT_STYLES, toCssVariables } from '@/lib/styles';
 
 interface PreviewProps {
   markdown: string;
@@ -18,10 +19,14 @@ async function loadMath(): Promise<Pluggable> {
 
 /**
  * The rendered document, and the only thing that survives into print — `print.css`
- * hides everything else by targeting `.print-root`.
+ * hides everything else by targeting `.styledown-doc`.
  *
  * Turning markdown into a tree is `src/lib`'s job; this component only binds that
  * tree to React, and decides when a document has earned the weight of a typesetter.
+ *
+ * It carries no layout utilities of its own. The sheet — its width, its margins, its
+ * typography — is `src/styles/document.css`, driven by the custom properties set below;
+ * M7 exports that same pairing as a standalone file.
  */
 export function Preview({ markdown }: PreviewProps) {
   const [math, setMath] = useState<Pluggable>();
@@ -46,5 +51,10 @@ export function Preview({ markdown }: PreviewProps) {
 
   const content = useMemo(() => toJsxRuntime(tree, { Fragment, jsx, jsxs }), [tree]);
 
-  return <article className="print-root mx-auto max-w-184 px-8 py-10">{content}</article>;
+  return (
+    // M5 lifts these styles into state; until then the defaults are the whole story.
+    <article className="styledown-doc" style={toCssVariables(DEFAULT_STYLES)}>
+      {content}
+    </article>
+  );
 }
