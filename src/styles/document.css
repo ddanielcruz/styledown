@@ -91,6 +91,16 @@
   font-feature-settings: 'cv05', 'ss01';
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
+  /*
+   * Nothing in this document may run off the edge of it. A bare URL is one long word to a
+   * line breaker — no engine breaks on a slash — and technical writing is full of them, so
+   * a single link can push a paragraph a page and a half wide. On screen that drags the
+   * pane sideways; on paper there is no sideways and the tail is just gone. `break-word`
+   * only intervenes where a word would otherwise overflow on its own line, so ordinary
+   * prose is untouched. Inherited, which is what puts it inside table cells and headings
+   * too — and inside a fenced block once print lets one wrap.
+   */
+  overflow-wrap: break-word;
 }
 
 /*
@@ -523,7 +533,6 @@
      * data, and this is the only way to keep it.
      */
     white-space: pre-wrap;
-    overflow-wrap: break-word;
   }
 
   .styledown-doc .katex-display {

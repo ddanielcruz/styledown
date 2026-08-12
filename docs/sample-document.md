@@ -14,6 +14,11 @@ Ordinary paragraphs with **strong**, _emphasis_, ~~strikethrough~~, `inline code
 https://example.com that should still be clickable. Footnotes[^1] hang off the end of
 the document rather than interrupting it.
 
+A URL with no break opportunity in it is one very long word as far as a line breaker is
+concerned, and technical writing is full of them — so
+https://example.com/a/deliberately/long/path/that/offers/the/line/breaker/nothing/to/work/with
+has to wrap rather than run off the edge of the page.
+
 > Blockquotes carry the arguments you are quoting rather than making.
 >
 > They can run to several paragraphs, and should still read as one block.
