@@ -82,9 +82,6 @@
    */
   padding: var(--doc-page-margin) min(var(--doc-page-margin), 12%);
   background: #fff;
-  box-shadow:
-    0 1px 2px rgb(16 24 40 / 6%),
-    0 8px 24px rgb(16 24 40 / 8%);
 
   color: var(--doc-ink);
   font-family: var(--doc-font-body);
@@ -94,6 +91,35 @@
   font-feature-settings: 'cv05', 'ss01';
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
+}
+
+/*
+ * It only looks like a sheet when there is room to show a whole page.
+ *
+ * Below that there is no page to depict, so the shadow and the gutter above it are
+ * decoration standing between a small screen and the writing — the document simply fills
+ * what it has been given. The horizontal gutter needs no rule of its own: the sheet is
+ * capped at the page width and centred, so space appears beside it exactly when there is
+ * space to spare.
+ *
+ * Asked of the pane rather than the viewport, because the panes are draggable and it is
+ * the pane that either has room or does not. With no container at all — an exported file
+ * with no app around it — this never matches, which is the right answer there too.
+ *
+ * The threshold is the page plus the gutter it wants either side, not the page alone: at
+ * exactly a page wide the sheet fits but its shadow has nowhere to fall, and a shadow
+ * clipped flat against the edge of the pane looks like a bug rather than a page.
+ *
+ * The width is written out because a container query cannot read a custom property. M5
+ * makes the page size a setting, and this has to learn to follow it.
+ */
+@container (min-width: calc(210mm + 4rem)) {
+  .styledown-doc {
+    margin-block: 2rem;
+    box-shadow:
+      0 1px 2px rgb(16 24 40 / 6%),
+      0 8px 24px rgb(16 24 40 / 8%);
+  }
 }
 
 /*
@@ -444,6 +470,11 @@
     max-width: none;
     /* The page box supplies the margins — see `toPageRule`. A second inset would double them. */
     padding: 0;
+    /* The sheet's own framing, undone. The pane is still a container under print media and
+       its width is whatever the print path resolves it to, so the query above may or may
+       not still match — which is reason enough not to leave it deciding the top of page
+       one. Verified: with print emulated, it matches, and only this keeps the gutter off. */
+    margin-block: 0;
     box-shadow: none;
     background: none;
 

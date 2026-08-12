@@ -27,8 +27,10 @@ function App() {
 
         <Panel defaultSize="50" minSize="25">
           {/* The backdrop the sheet sits on. It is the pane's, not the document's — the
-              document has to be exportable without it. */}
-          <div className="h-full overflow-auto bg-neutral-100 px-6 py-8">
+              document has to be exportable without it. `@container` lets the sheet ask how
+              much room this pane has, and stop drawing itself as a page when the answer is
+              "less than one"; the inset it used to carry came with it. */}
+          <div className="@container h-full overflow-auto bg-neutral-100">
             <Preview markdown={markdown} />
           </div>
         </Panel>
