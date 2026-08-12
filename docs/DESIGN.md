@@ -81,7 +81,7 @@ type PersistedState = {
 
 Name the tokens as though they were already settings — every future control is a token moving out of the stylesheet's defaults and into `DocumentStyles`, not a refactor.
 
-`toCssVariables()` turns those five into the `--doc-*` properties the stylesheet reads, set on the document container so a change repaints without regenerating a stylesheet. Two of them have a second consumer: `@page` cannot reliably read custom properties, and its `size` descriptor will not take a `var()` at all, so M4 generates its `@page` rule from `DocumentStyles.page` directly. Same source of truth, two ways out of it. `codeTheme` produces no variable — a highlight.js theme is a whole stylesheet of token colours, so choosing one swaps the `<link>`.
+`toCssVariables()` turns those five into the `--doc-*` properties the stylesheet reads, set on the document container so a change repaints without regenerating a stylesheet. Two of them have a second consumer: `@page` cannot reliably read custom properties, and its `size` descriptor will not take a `var()` at all, so `toPageRule()` emits the page box as text and React hoists it into the head. Same source of truth, two ways out of it — kept honest by a test asserting the printed margin is the string the preview inset itself by. `codeTheme` produces no variable — a highlight.js theme is a whole stylesheet of token colours, so choosing one swaps the `<link>`.
 
 Persisted state is Zod-validated on read, falling back to defaults. A corrupted `localStorage` entry must never produce a broken app.
 
@@ -111,7 +111,8 @@ The promise is about **content**: document text, styles, and images are never tr
 - **Weight that only some documents carry** — KaTeX is a quarter of a megabyte and most technical documents have no maths, so it loads only once a document proves it needs one; until then the TeX shows as its own source. Mermaid will work the same way. Highlighting, by contrast, is eager: nearly every technical document has code in it.
 - **Raw HTML in Markdown is dropped**, not rendered. Supporting `<details>` and friends needs `rehype-raw` plus a sanitisation policy, and its own answer for what a collapsed block means on paper. Deferred deliberately, not overlooked.
 - **Styling** — CSS custom properties set on the document container, consumed by a static stylesheet. Changing a setting updates a few variables; no stylesheet regeneration. The same variables drive screen, print, and HTML export, so all three match by construction.
-- **PDF** — `window.print()` with a print stylesheet that hides the app chrome. `@page` for size and margins; `break-inside: avoid` on code blocks, tables, images, and diagrams; orphan and widow control. This is the area most likely to need iteration.
+- **PDF** — `window.print()` with a print stylesheet that hides the app chrome; `toPageRule()` generates the page box. Orphans and widows are set at the document root and inherit from there. `break-inside: avoid` guards table rows, images, blockquotes and display maths — deliberately **not** code blocks or list items: a fence taller than the space left jumps to the next page, and if it is taller than a whole page it splits anyway, so `avoid` buys a half-empty page and the break as well. Orphans and widows say what we actually meant, which is that a block may only split where it can leave three lines behind and carry three over. Anything that scrolls on screen has to be un-boxed for print, or its overflow is simply absent from the PDF with nothing to show the reader that text went missing.
+- **What print cannot do** — Chrome draws its own header and footer, and neither CSS nor `window.print()` can reach that switch; Blink has never implemented `@page` margin boxes, so page numbers of our own are not an option either. The app asks the reader to turn headers and footers off, which is the whole of the remedy. And **no page breaks are drawn on screen**: the preview is one continuous sheet, because a break we predict is a break the print engine remains free to put somewhere else.
 - **Persistence** — one active document plus styles in `localStorage`, debounced. `.md` import/export is the portability mechanism.
 
 ## Not doing
@@ -132,7 +133,7 @@ A free account can't serve Pages from a private repo, or protect its branches �
 - [x] **M1** — Walking skeleton: editor + preview + print to PDF, deliberately ugly → _the full path works_
 - [x] **M2** — Rendering pipeline: GFM, code highlighting, math → _real documents render correctly_
 - [x] **M3** — The default design: tokens, bundled font, CSS variables → _it looks genuinely good_; go public, add the Pages deploy
-- [ ] **M4** — Print quality: `@page`, break rules, orphans and widows → _PDFs paginate properly_
+- [x] **M4** — Print quality: `@page`, break rules, orphans and widows → _PDFs paginate properly_
 - [ ] **M5** — The five controls → _adjustable_
 - [ ] **M6** — Persistence, `.md` import/export → _work survives a refresh_
 - [ ] **M7** — HTML and Markdown export

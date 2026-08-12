@@ -67,6 +67,14 @@
   width: min(100%, var(--doc-page-width));
   margin-inline: auto;
   /*
+   * The sheet has to be a containing block. `.sr-only` below positions absolutely, and
+   * with nothing positioned above it that resolves against the viewport instead of the
+   * document — so the hidden footnote label lands wherever it happens to fall down the
+   * page, drags `<html>`'s scroll height out to meet it, and the whole app scrolls
+   * behind its own panes. One 1px element, and the layout is gone.
+   */
+  position: relative;
+  /*
    * The side margins give way once the sheet is narrower than a real page. At full width
    * the `min()` always picks the page margin, so the printed measure is untouched; below
    * about 690px the margin would otherwise eat two thirds of the column and leave a
@@ -74,9 +82,6 @@
    */
   padding: var(--doc-page-margin) min(var(--doc-page-margin), 12%);
   background: #fff;
-  box-shadow:
-    0 1px 2px rgb(16 24 40 / 6%),
-    0 8px 24px rgb(16 24 40 / 8%);
 
   color: var(--doc-ink);
   font-family: var(--doc-font-body);
@@ -86,6 +91,45 @@
   font-feature-settings: 'cv05', 'ss01';
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
+  /*
+   * Nothing in this document may run off the edge of it. A bare URL is one long word to a
+   * line breaker — no engine breaks on a slash — and technical writing is full of them, so
+   * a single link can push a paragraph a page and a half wide. On screen that drags the
+   * pane sideways; on paper there is no sideways and the tail is just gone. `break-word`
+   * only intervenes where a word would otherwise overflow on its own line, so ordinary
+   * prose is untouched. Inherited, which is what puts it inside table cells and headings
+   * too — and inside a fenced block once print lets one wrap.
+   */
+  overflow-wrap: break-word;
+}
+
+/*
+ * It only looks like a sheet when there is room to show a whole page.
+ *
+ * Below that there is no page to depict, so the shadow and the gutter above it are
+ * decoration standing between a small screen and the writing — the document simply fills
+ * what it has been given. The horizontal gutter needs no rule of its own: the sheet is
+ * capped at the page width and centred, so space appears beside it exactly when there is
+ * space to spare.
+ *
+ * Asked of the pane rather than the viewport, because the panes are draggable and it is
+ * the pane that either has room or does not. With no container at all — an exported file
+ * with no app around it — this never matches, which is the right answer there too.
+ *
+ * The threshold is the page plus the gutter it wants either side, not the page alone: at
+ * exactly a page wide the sheet fits but its shadow has nowhere to fall, and a shadow
+ * clipped flat against the edge of the pane looks like a bug rather than a page.
+ *
+ * The width is written out because a container query cannot read a custom property. M5
+ * makes the page size a setting, and this has to learn to follow it.
+ */
+@container (min-width: calc(210mm + 4rem)) {
+  .styledown-doc {
+    margin-block: 2rem;
+    box-shadow:
+      0 1px 2px rgb(16 24 40 / 6%),
+      0 8px 24px rgb(16 24 40 / 8%);
+  }
 }
 
 /*
@@ -311,7 +355,6 @@
   font-family: var(--doc-font-mono);
   font-size: 0.875em;
   line-height: 1.6;
-  break-inside: avoid;
 }
 
 /*
@@ -435,13 +478,38 @@
   .styledown-doc {
     width: auto;
     max-width: none;
-    /* The page box supplies the margins once M4 sets it; a second inset would double them. */
+    /* The page box supplies the margins — see `toPageRule`. A second inset would double them. */
     padding: 0;
+    /* The sheet's own framing, undone. The pane is still a container under print media and
+       its width is whatever the print path resolves it to, so the query above may or may
+       not still match — which is reason enough not to leave it deciding the top of page
+       one. Verified: with print emulated, it matches, and only this keeps the gutter off. */
+    margin-block: 0;
     box-shadow: none;
     background: none;
+
+    /*
+     * Never leave one line of a paragraph behind at a page break, in either direction.
+     * Both properties inherit, so the root is the only place they need to be set.
+     */
+    orphans: 3;
+    widows: 3;
+
+    /*
+     * Chrome drops backgrounds and flattens colour to black when it decides it is saving
+     * ink, which would take syntax highlighting with it — the one thing the whole code
+     * pipeline exists to produce, gone in the one output that matters.
+     */
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
   }
 
-  /* Paper does not scroll, so the table goes back to being a table. */
+  /*
+   * Paper does not scroll. Anything that survives an overflow on screen by scrolling has
+   * to be un-boxed here, or the part past the edge is simply not in the PDF — silently,
+   * with nothing to show the reader that text went missing.
+   */
+
   .styledown-doc table {
     display: table;
     overflow-x: visible;
@@ -452,9 +520,40 @@
     display: table-header-group;
   }
 
+  .styledown-doc pre {
+    /* Clipped on screen only to keep the theme's square background inside our radius. */
+    overflow: visible;
+  }
+
+  .styledown-doc pre code {
+    overflow-x: visible;
+    /*
+     * A line wider than the measure has nowhere to go on paper, so it wraps. It reads
+     * worse than it does on screen — but a line of code cut off at the page edge is lost
+     * data, and this is the only way to keep it.
+     */
+    white-space: pre-wrap;
+  }
+
+  .styledown-doc .katex-display {
+    overflow: visible;
+  }
+
+  /*
+   * Things that read as a single object, and are ruined by a break through the middle.
+   *
+   * Code blocks and list items are deliberately not in this list. `break-inside: avoid`
+   * on a `pre` is right for the short fence and disastrous for the long one: a fence
+   * taller than what is left of the page jumps to the next one, and if it is taller than
+   * a whole page it then splits anyway — so the document pays a half-empty page and gets
+   * the break as well. Orphans and widows express the rule we actually wanted and could
+   * not write as a break property: a block splits only where it can leave three lines
+   * behind and carry three over, which no short fence or list item ever can.
+   */
   .styledown-doc tr,
-  .styledown-doc pre,
-  .styledown-doc blockquote {
+  .styledown-doc img,
+  .styledown-doc blockquote,
+  .styledown-doc .katex-display {
     break-inside: avoid;
   }
 }
