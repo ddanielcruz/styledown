@@ -67,6 +67,14 @@
   width: min(100%, var(--doc-page-width));
   margin-inline: auto;
   /*
+   * The sheet has to be a containing block. `.sr-only` below positions absolutely, and
+   * with nothing positioned above it that resolves against the viewport instead of the
+   * document — so the hidden footnote label lands wherever it happens to fall down the
+   * page, drags `<html>`'s scroll height out to meet it, and the whole app scrolls
+   * behind its own panes. One 1px element, and the layout is gone.
+   */
+  position: relative;
+  /*
    * The side margins give way once the sheet is narrower than a real page. At full width
    * the `min()` always picks the page margin, so the printed measure is untouched; below
    * about 690px the margin would otherwise eat two thirds of the column and leave a
