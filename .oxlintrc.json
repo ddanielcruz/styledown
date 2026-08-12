@@ -65,9 +65,15 @@
       }
     },
     {
+      // Vendored from the shadcn registry and re-written verbatim by `shadcn add`, so a
+      // fix applied here is a fix that disappears. Their own house style is the one they
+      // are maintained in; ours applies to the code we write.
       "files": ["src/components/ui/**"],
       "rules": {
-        "react/only-export-components": "off"
+        "react/only-export-components": "off",
+        "react/jsx-no-constructed-context-values": "off",
+        "jsx-a11y/label-has-associated-control": "off",
+        "no-underscore-dangle": "off"
       }
     }
   ]

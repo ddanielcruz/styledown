@@ -120,11 +120,24 @@
  * exactly a page wide the sheet fits but its shadow has nowhere to fall, and a shadow
  * clipped flat against the edge of the pane looks like a bug rather than a page.
  *
- * The width is written out because a container query cannot read a custom property. M5
- * makes the page size a setting, and this has to learn to follow it.
+ * A container query cannot read a custom property, so the widths are written out and the
+ * selector says which paper each one is about — Letter and Legal are 6mm wider than A4,
+ * and left to A4's threshold they would draw a page in a pane too narrow to hold one.
+ * `--doc-page-width` is still the single source: these two only decide when the framing
+ * appears, and `page-metrics.ts` is where the widths themselves come from.
  */
 @container (min-width: calc(210mm + 4rem)) {
-  .styledown-doc {
+  .styledown-doc[data-page-size='a4'] {
+    margin-block: 2rem;
+    box-shadow:
+      0 1px 2px rgb(16 24 40 / 6%),
+      0 8px 24px rgb(16 24 40 / 8%);
+  }
+}
+
+@container (min-width: calc(216mm + 4rem)) {
+  .styledown-doc[data-page-size='letter'],
+  .styledown-doc[data-page-size='legal'] {
     margin-block: 2rem;
     box-shadow:
       0 1px 2px rgb(16 24 40 / 6%),

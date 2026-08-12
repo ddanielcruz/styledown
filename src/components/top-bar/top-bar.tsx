@@ -1,13 +1,18 @@
-import { Info, Printer } from 'lucide-react';
+import { Info, PanelRight, Printer } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
+interface TopBarProps {
+  panelOpen: boolean;
+  onTogglePanel: () => void;
+}
+
 /**
- * Document actions. M1 has exactly one — printing is the whole point of the product,
- * so it is the first control to exist.
+ * Document actions. Printing is the whole point of the product, so it is the one that
+ * looks like a button; the rest of the bar is about getting out of the document's way.
  */
-export function TopBar() {
+export function TopBar({ panelOpen, onTogglePanel }: TopBarProps) {
   return (
     <header className="no-print flex h-12 shrink-0 items-center justify-between border-b px-4">
       <span className="text-sm font-medium">Styledown</span>
@@ -36,6 +41,16 @@ export function TopBar() {
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
+
+        <Button
+          size="sm"
+          variant={panelOpen ? 'secondary' : 'ghost'}
+          aria-pressed={panelOpen}
+          aria-label="Style settings"
+          onClick={onTogglePanel}
+        >
+          <PanelRight />
+        </Button>
 
         <Button size="sm" variant="outline" onClick={() => window.print()}>
           <Printer />
