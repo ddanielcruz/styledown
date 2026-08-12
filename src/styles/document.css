@@ -311,7 +311,6 @@
   font-family: var(--doc-font-mono);
   font-size: 0.875em;
   line-height: 1.6;
-  break-inside: avoid;
 }
 
 /*
@@ -435,13 +434,33 @@
   .styledown-doc {
     width: auto;
     max-width: none;
-    /* The page box supplies the margins once M4 sets it; a second inset would double them. */
+    /* The page box supplies the margins — see `toPageRule`. A second inset would double them. */
     padding: 0;
     box-shadow: none;
     background: none;
+
+    /*
+     * Never leave one line of a paragraph behind at a page break, in either direction.
+     * Both properties inherit, so the root is the only place they need to be set.
+     */
+    orphans: 3;
+    widows: 3;
+
+    /*
+     * Chrome drops backgrounds and flattens colour to black when it decides it is saving
+     * ink, which would take syntax highlighting with it — the one thing the whole code
+     * pipeline exists to produce, gone in the one output that matters.
+     */
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
   }
 
-  /* Paper does not scroll, so the table goes back to being a table. */
+  /*
+   * Paper does not scroll. Anything that survives an overflow on screen by scrolling has
+   * to be un-boxed here, or the part past the edge is simply not in the PDF — silently,
+   * with nothing to show the reader that text went missing.
+   */
+
   .styledown-doc table {
     display: table;
     overflow-x: visible;
@@ -452,9 +471,41 @@
     display: table-header-group;
   }
 
+  .styledown-doc pre {
+    /* Clipped on screen only to keep the theme's square background inside our radius. */
+    overflow: visible;
+  }
+
+  .styledown-doc pre code {
+    overflow-x: visible;
+    /*
+     * A line wider than the measure has nowhere to go on paper, so it wraps. It reads
+     * worse than it does on screen — but a line of code cut off at the page edge is lost
+     * data, and this is the only way to keep it.
+     */
+    white-space: pre-wrap;
+    overflow-wrap: break-word;
+  }
+
+  .styledown-doc .katex-display {
+    overflow: visible;
+  }
+
+  /*
+   * Things that read as a single object, and are ruined by a break through the middle.
+   *
+   * Code blocks and list items are deliberately not in this list. `break-inside: avoid`
+   * on a `pre` is right for the short fence and disastrous for the long one: a fence
+   * taller than what is left of the page jumps to the next one, and if it is taller than
+   * a whole page it then splits anyway — so the document pays a half-empty page and gets
+   * the break as well. Orphans and widows express the rule we actually wanted and could
+   * not write as a break property: a block splits only where it can leave three lines
+   * behind and carry three over, which no short fence or list item ever can.
+   */
   .styledown-doc tr,
-  .styledown-doc pre,
-  .styledown-doc blockquote {
+  .styledown-doc img,
+  .styledown-doc blockquote,
+  .styledown-doc .katex-display {
     break-inside: avoid;
   }
 }

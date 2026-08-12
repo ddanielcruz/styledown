@@ -1,4 +1,5 @@
 export { toCssVariables } from './css-variables';
+export { toPageRule } from './page-rule';
 export {
   DEFAULT_STYLES,
   type CodeTheme,

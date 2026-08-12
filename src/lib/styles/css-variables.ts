@@ -1,4 +1,5 @@
-import type { DocumentStyles, FontFamily, Margins, PageSize } from './document-styles';
+import type { DocumentStyles, FontFamily } from './document-styles';
+import { PAGE_MARGINS, PAGE_WIDTHS } from './page-metrics';
 
 /**
  * Fontsource registers variable faces under a `… Variable` family name, so each stack
@@ -13,19 +14,6 @@ const FONT_STACKS: Record<FontFamily, string> = {
   lora: "'Lora Variable', Lora, ui-serif, Georgia, serif",
   'source-serif-4': "'Source Serif 4 Variable', 'Source Serif 4', ui-serif, Georgia, serif",
   merriweather: "'Merriweather Variable', Merriweather, ui-serif, Georgia, serif",
-};
-
-/** Letter and Legal share a width and differ only in height, which nothing reads yet. */
-const PAGE_WIDTHS: Record<PageSize, string> = {
-  a4: '210mm',
-  letter: '216mm',
-  legal: '216mm',
-};
-
-const PAGE_MARGINS: Record<Margins, string> = {
-  narrow: '15mm',
-  normal: '22mm',
-  wide: '32mm',
 };
 
 /**
