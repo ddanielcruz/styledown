@@ -26,6 +26,7 @@
   --doc-font-size: 16px;
   --doc-accent: #475569;
   --doc-page-width: 210mm;
+  --doc-page-height: 297mm;
   --doc-page-margin: 22mm;
 
   /* — Fixed tokens — */
@@ -91,6 +92,16 @@
    */
   padding: var(--doc-page-margin) min(var(--doc-page-margin), 12%);
   background: #fff;
+  /*
+   * A short document is still a document, and paper does not shrink to fit what is written
+   * on it. Without this the sheet ends where the text does, so three lines draw a white
+   * strip with the pane's backdrop below it — which reads as a rendering fault rather than
+   * as a page. Screen only: on paper the height comes from `@page`, and a minimum here
+   * would be answered with a second, empty sheet.
+   */
+  @media screen {
+    min-height: 100%;
+  }
 
   color: var(--doc-ink);
   font-family: var(--doc-font-body);
@@ -138,6 +149,9 @@
 @container (min-width: calc(210mm + 4rem)) {
   .styledown-doc[data-page-size='a4'] {
     margin-block: 2rem;
+    /* Once it is drawn as a sheet, one page is its floor — filling the pane is what a
+       document does when there is no page to depict. */
+    min-height: var(--doc-page-height);
     box-shadow:
       0 1px 2px rgb(16 24 40 / 6%),
       0 8px 24px rgb(16 24 40 / 8%);
@@ -148,6 +162,7 @@
   .styledown-doc[data-page-size='letter'],
   .styledown-doc[data-page-size='legal'] {
     margin-block: 2rem;
+    min-height: var(--doc-page-height);
     box-shadow:
       0 1px 2px rgb(16 24 40 / 6%),
       0 8px 24px rgb(16 24 40 / 8%);

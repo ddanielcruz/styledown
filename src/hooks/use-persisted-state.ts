@@ -7,12 +7,15 @@ import type { DocumentStyles } from '@/lib/styles';
 /**
  * The document and its styles, kept across refreshes.
  *
- * Two things are worth knowing about how this behaves, because both look like bugs and
- * neither is. Emptying the editor persists an empty document: that is the reader's work,
- * not a reset, and restoring our text over it would be the app overruling them. And a
- * reader who has been here before keeps *their* copy of the default document even after we
- * improve ours — the moment it was saved it stopped being our sample and became their
- * draft.
+ * Two things are worth knowing about how this behaves. Emptying the editor is saved like
+ * any other edit — clearing the page and walking away loses nothing — but an empty
+ * document is not restored on the way back in, because an editor with nothing in it and no
+ * way to ask for something is the blank canvas the product is built to avoid. That rule
+ * lives in `loadState`, so it applies once, at the door.
+ *
+ * And a reader who has been here before keeps *their* copy of the default document even
+ * after we improve ours — the moment it was saved it stopped being our sample and became
+ * their draft.
  */
 
 const STORAGE_KEY = 'styledown:state';

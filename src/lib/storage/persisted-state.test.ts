@@ -39,6 +39,21 @@ describe('loadState', () => {
     }
   });
 
+  it('starts over rather than opening on an empty page, keeping the settings', () => {
+    // There is no blank canvas in this product, and an editor with nothing in it and no
+    // way to ask for something is the worst version of one.
+    for (const content of ['', '   \n\n  ']) {
+      const raw = JSON.stringify({
+        version: 1,
+        content,
+        styles: { ...DEFAULT_STYLES, bodyFont: 'lora' },
+      });
+
+      expect(loadState(raw, UK).content).toBe(DEFAULT_DOCUMENT);
+      expect(loadState(raw, UK).styles.bodyFont).toBe('lora');
+    }
+  });
+
   it('loses only the setting that is broken, never the document', () => {
     // The whole argument for validating field by field. All-or-nothing parsing would
     // answer one bad colour by throwing away everything the reader has written.

@@ -1,5 +1,5 @@
 import type { DocumentStyles, FontFamily } from './document-styles';
-import { PAGE_MARGINS, PAGE_WIDTHS } from './page-metrics';
+import { PAGE_HEIGHTS, PAGE_MARGINS, PAGE_WIDTHS } from './page-metrics';
 
 /**
  * Fontsource registers variable faces under a `… Variable` family name, so each stack
@@ -30,6 +30,9 @@ export function toCssVariables(styles: DocumentStyles): Record<string, string> {
     '--doc-font-size': `${styles.fontSize}px`,
     '--doc-accent': styles.accent,
     '--doc-page-width': PAGE_WIDTHS[styles.page.size],
+    // Read only by the screen, as the sheet's minimum height. Print gets its page from
+    // `@page` and would answer a height here with a second, empty sheet.
+    '--doc-page-height': PAGE_HEIGHTS[styles.page.size],
     '--doc-page-margin': PAGE_MARGINS[styles.page.margins],
   };
 }

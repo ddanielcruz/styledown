@@ -10,6 +10,7 @@ describe('toCssVariables', () => {
       '--doc-font-size': '16px',
       '--doc-accent': DEFAULT_STYLES.accent,
       '--doc-page-width': '210mm',
+      '--doc-page-height': '297mm',
       '--doc-page-margin': '22mm',
     });
   });
@@ -22,13 +23,12 @@ describe('toCssVariables', () => {
   });
 
   it('gives Letter and Legal the same width, because they differ only in height', () => {
-    const width = (size: 'a4' | 'letter' | 'legal') =>
-      toCssVariables({ ...DEFAULT_STYLES, page: { ...DEFAULT_STYLES.page, size } })[
-        '--doc-page-width'
-      ];
+    const paper = (size: 'a4' | 'letter' | 'legal') =>
+      toCssVariables({ ...DEFAULT_STYLES, page: { ...DEFAULT_STYLES.page, size } });
 
-    expect(width('letter')).toBe(width('legal'));
-    expect(width('letter')).not.toBe(width('a4'));
+    expect(paper('letter')['--doc-page-width']).toBe(paper('legal')['--doc-page-width']);
+    expect(paper('letter')['--doc-page-width']).not.toBe(paper('a4')['--doc-page-width']);
+    expect(paper('letter')['--doc-page-height']).not.toBe(paper('legal')['--doc-page-height']);
   });
 
   it('serves a serif face when one is chosen', () => {

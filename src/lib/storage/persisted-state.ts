@@ -74,7 +74,18 @@ function schemaFor(locales: readonly string[]) {
     // never heard of means the shape underneath is unknown, and guessing at it is how a
     // migration turns into a mangled document.
     version: z.literal(1),
-    content: z.string().catch(DEFAULT_DOCUMENT),
+    /*
+     * An empty document is not a state worth restoring. `docs/DESIGN.md`'s first rule is
+     * that there is no blank canvas — the app always opens on something rendered — and a
+     * reader who cleared the editor and closed the tab comes back to a screen with nothing
+     * on it and no way to ask for something. Emptying it still *saves*, so clearing the
+     * page and going to make coffee loses nothing; it is only on the way back in that
+     * empty is read as "start me over".
+     */
+    content: z
+      .string()
+      .refine((text) => text.trim().length > 0)
+      .catch(DEFAULT_DOCUMENT),
     styles,
   });
 }
