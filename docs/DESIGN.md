@@ -48,14 +48,15 @@ src/
 │  ├─ editor/           # CodeMirror pane, toolbar, shortcuts
 │  ├─ preview/          # Rendered document
 │  ├─ style-panel/      # Right sidebar
-│  ├─ top-bar/          # New / Open / Save / Export / view mode
+│  ├─ top-bar/          # Open / Download / Print / panel toggle
 │  └─ ui/               # shadcn primitives
+├─ hooks/               # The persisted document, and what else needs a lifecycle
 └─ styles/              # App CSS, the document stylesheet, print CSS
 ```
 
 **The one rule that matters:** `src/lib/**` never imports from `src/components/**`. The core is framework-free and testable without rendering anything; the UI is a consumer of it.
 
-The document and its styles live in `App`, as two `useState`s passed to the panel and the preview. There is no state directory and no context: one level of props is not a problem a context solves, and the day it crosses three is the day to add one.
+The document and its styles are one saved thing, so one hook owns both and `App` passes them down. There is no state directory and no context: one level of props is not a problem a context solves, and the day it crosses three is the day to add one.
 
 ## Data model
 
@@ -74,10 +75,12 @@ type DocumentStyles = {
 
 type PersistedState = {
   version: 1; // so future formats can migrate or safely reset
-  document: { title: string; content: string };
+  content: string;
   styles: DocumentStyles;
 };
 ```
+
+A document's **title is derived, never stored**: it is the first top-level heading, read off the parsed tree so a `#` inside a code fence cannot become one. A title field would be a sixth control that can silently disagree with the heading on the page, and there would be nothing to gain by it — the title's whole job is to name things outside the document. It sets the browser tab, it names the downloaded `.md`, and it is what Chrome offers as the filename when a reader saves the PDF, which is the one screen in the flow we cannot style.
 
 Name the tokens as though they were already settings — every future control is a token moving out of the stylesheet's defaults and into `DocumentStyles`, not a refactor.
 
@@ -85,7 +88,7 @@ Each of the four unions is **derived from its list of options** — the labelled
 
 `toCssVariables()` turns those five into the `--doc-*` properties the stylesheet reads, set on the document container so a change repaints without regenerating a stylesheet. Two of them have a second consumer: `@page` cannot reliably read custom properties, and its `size` descriptor will not take a `var()` at all, so `toPageRule()` emits the page box as text and React hoists it into the head. Same source of truth, two ways out of it — kept honest by a test asserting the printed margin is the string the preview inset itself by. `codeTheme` produces no variable — a highlight.js theme is a whole stylesheet of token colours, so choosing one swaps the `<link>`.
 
-Persisted state is Zod-validated on read, falling back to defaults. A corrupted `localStorage` entry must never produce a broken app.
+Persisted state is Zod-validated on read, falling back to defaults. A corrupted `localStorage` entry must never produce a broken app — and the validation is **per field**, because how far a bad value is allowed to reach is the whole question. Parsing the object as one unit would answer a single unrecognised colour by discarding everything the reader has written, which is a far worse failure than the one it is reporting. Only `version` is all-or-nothing: a format we do not recognise is not a document we can partially rescue.
 
 ## The v1 control surface
 
@@ -119,7 +122,7 @@ The font menu sets each option in its own face, which is the one place that requ
 - **Styling** — CSS custom properties set on the document container, consumed by a static stylesheet. Changing a setting updates a few variables; no stylesheet regeneration. The same variables drive screen, print, and HTML export, so all three match by construction. The two settings a variable cannot carry — the page box and the code theme — are each one plain `<style>` element whose text is swapped. Deliberately **not** hoisted into the head by React: hoisted stylesheets are keyed by `href` and never removed, so choosing a paper you have already been on reuses an element sitting above the newer one and the document prints the paper before last. Found by printing and measuring, not by reading the code.
 - **PDF** — `window.print()` with a print stylesheet that hides the app chrome; `toPageRule()` generates the page box. Orphans and widows are set at the document root and inherit from there. `break-inside: avoid` guards table rows, images, blockquotes and display maths — deliberately **not** code blocks or list items: a fence taller than the space left jumps to the next page, and if it is taller than a whole page it splits anyway, so `avoid` buys a half-empty page and the break as well. Orphans and widows say what we actually meant, which is that a block may only split where it can leave three lines behind and carry three over. Anything that scrolls on screen has to be un-boxed for print, or its overflow is simply absent from the PDF with nothing to show the reader that text went missing.
 - **What print cannot do** — Chrome draws its own header and footer, and neither CSS nor `window.print()` can reach that switch; Blink has never implemented `@page` margin boxes, so page numbers of our own are not an option either. The app asks the reader to turn headers and footers off, which is the whole of the remedy. And **no page breaks are drawn on screen**: the preview is one continuous sheet, because a break we predict is a break the print engine remains free to put somewhere else.
-- **Persistence** — one active document plus styles in `localStorage`, debounced. `.md` import/export is the portability mechanism.
+- **Persistence** — one active document plus its styles in `localStorage`, written on a 500 ms debounce and flushed when the tab is hidden, because the debounce window is exactly where a closing tab loses work. Storage is treated as something that throws: private mode refuses writes and a full origin refuses them once the quota is reached, and forgetting a document is bad where taking the editor down mid-sentence is worse. `.md` import and export are the portability mechanism, and the honest answer to "what happens if I clear my browsing data" — Open replaces the document outright, since choosing a file is already deliberate and the editor's own undo reaches back over it.
 
 ## Not doing
 
@@ -141,11 +144,11 @@ A free account can't serve Pages from a private repo, or protect its branches �
 - [x] **M3** — The default design: tokens, bundled font, CSS variables → _it looks genuinely good_; go public, add the Pages deploy
 - [x] **M4** — Print quality: `@page`, break rules, orphans and widows → _PDFs paginate properly_
 - [x] **M5** — The five controls → _adjustable_
-- [ ] **M6** — Persistence, `.md` import/export → _work survives a refresh_
+- [x] **M6** — Persistence, `.md` import/export → _work survives a refresh_
 - [ ] **M7** — HTML and Markdown export
 - [ ] **M8** — Mermaid, lazy-loaded and code-split
 - [ ] **M9** — Image paste/drop as data URIs
-- [ ] **M10** — Launch polish: empty states, accessibility, README with screenshots, `CONTRIBUTING.md`
+- [ ] **M10** — Launch polish: empty states and the New document that needs one, accessibility, README with screenshots, `CONTRIBUTING.md`
 
 **M1 is the highest-value milestone** — everything after it is improvement. **M3 and M4 deserve the most time**; they decide whether the project is any good.
 
