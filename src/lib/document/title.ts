@@ -51,13 +51,16 @@ const MAX_SLUG = 60;
  *
  * Letters are matched by Unicode property, not `[a-z]`: slugging to ASCII would name every
  * document written in most of the world's scripts `untitled.md`.
+ *
+ * The extension is an argument because the same document leaves as `.md` and as `.html`,
+ * and the two downloads sitting side by side in a folder should differ only in that.
  */
-export function fileNameOf(title: string | undefined): string {
+export function fileNameOf(title: string | undefined, extension = 'md'): string {
   const slug = (title ?? '')
     .toLowerCase()
     .replace(/[^\p{L}\p{N}]+/gu, '-')
     .slice(0, MAX_SLUG)
     .replace(/^-+|-+$/g, '');
 
-  return `${slug || 'untitled'}.md`;
+  return `${slug || 'untitled'}.${extension}`;
 }
