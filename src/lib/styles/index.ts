@@ -1,5 +1,5 @@
 export { FONT_STACKS, toCssVariables } from './css-variables';
-export { createDefaultStyles, defaultPageSize } from './locale-defaults';
+export { createDefaultStyles } from './locale-defaults';
 export { toPageRule } from './page-rule';
 export {
   ACCENT_SWATCHES,
@@ -14,5 +14,4 @@ export {
   type FontFamily,
   type Margins,
   type PageSize,
-  type StyleOption,
 } from './document-styles';
