@@ -1,14 +1,32 @@
-import { Download, FolderOpen, Info, PanelRight, Printer } from 'lucide-react';
+import {
+  ChevronDown,
+  Download,
+  FileText,
+  FolderOpen,
+  Globe,
+  Info,
+  PanelRight,
+  Printer,
+} from 'lucide-react';
 import { useRef, type ChangeEvent } from 'react';
 
 import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { fileNameOf, titleOf } from '@/lib/document/title';
+import type { DocumentStyles } from '@/lib/styles';
 
 import { downloadText } from './download';
+import { toExportedHtml } from './export-html';
 
 interface TopBarProps {
   content: string;
+  styles: DocumentStyles;
   onOpen: (content: string) => void;
   panelOpen: boolean;
   onTogglePanel: () => void;
@@ -20,12 +38,14 @@ interface TopBarProps {
  *
  * Open and Download are how work gets in and out of a browser that stores everything
  * locally — the answer to "what happens to my document if I clear my browsing data" has to
- * be something the reader can act on, and a `.md` file on their disk is that answer.
+ * be something the reader can act on, and a file on their disk is that answer. The two
+ * formats answer different questions: the `.md` is the document to keep writing, and the
+ * `.html` is the document to send someone.
  *
  * Open replaces the document outright, with no confirmation. Picking a file in the OS
  * dialog is already a deliberate act, and CodeMirror's own undo still reaches back over it.
  */
-export function TopBar({ content, onOpen, panelOpen, onTogglePanel }: TopBarProps) {
+export function TopBar({ content, styles, onOpen, panelOpen, onTogglePanel }: TopBarProps) {
   const fileInput = useRef<HTMLInputElement>(null);
 
   async function handleFile(event: ChangeEvent<HTMLInputElement>) {
@@ -37,6 +57,18 @@ export function TopBar({ content, onOpen, panelOpen, onTogglePanel }: TopBarProp
     event.target.value = '';
 
     if (file) onOpen(await file.text());
+  }
+
+  // Both names are decided at the click rather than held in state, so they always match
+  // the heading the document currently has.
+  function downloadMarkdown() {
+    downloadText(fileNameOf(titleOf(content)), content, 'text/markdown');
+  }
+
+  async function downloadHtml() {
+    const html = await toExportedHtml(content, styles);
+
+    downloadText(fileNameOf(titleOf(content), 'html'), html, 'text/html');
   }
 
   return (
@@ -63,16 +95,37 @@ export function TopBar({ content, onOpen, panelOpen, onTogglePanel }: TopBarProp
           Open
         </Button>
 
-        {/* The name is decided at the click rather than held in state, so it always
-            matches the heading the document currently has. */}
-        <Button
-          size="sm"
-          variant="ghost"
-          onClick={() => downloadText(fileNameOf(titleOf(content)), content, 'text/markdown')}
-        >
-          <Download />
-          Download
-        </Button>
+        {/*
+         * Two formats and one action, so they live in a menu rather than as two buttons
+         * competing for the same glance — and DOCX, if it ever comes, has somewhere to go
+         * that is not this bar.
+         */}
+        <DropdownMenu>
+          {/* The label is on the trigger, which is the element that ends up in the page;
+              `render` only lends it the button's styling. The rule reads the empty tag. */}
+          {/* eslint-disable-next-line jsx-a11y/control-has-associated-label */}
+          <DropdownMenuTrigger render={<Button size="sm" variant="ghost" />}>
+            <Download />
+            Download
+            <ChevronDown className="size-3.5 opacity-60" />
+          </DropdownMenuTrigger>
+
+          <DropdownMenuContent className="w-auto min-w-44">
+            <DropdownMenuItem onClick={downloadMarkdown}>
+              <FileText />
+              Markdown
+              <span className="text-muted-foreground ml-auto pl-4 text-xs">.md</span>
+            </DropdownMenuItem>
+
+            {/* No pending state: the typefaces are read back out of the same bundle the
+                preview already rendered from, so this is a moment rather than a wait. */}
+            <DropdownMenuItem onClick={() => void downloadHtml()}>
+              <Globe />
+              Web page
+              <span className="text-muted-foreground ml-auto pl-4 text-xs">.html</span>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       <div className="flex items-center gap-3">

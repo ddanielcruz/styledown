@@ -17,6 +17,7 @@ function App() {
     <div className="flex h-svh flex-col">
       <TopBar
         content={content}
+        styles={styles}
         onOpen={setContent}
         panelOpen={panelOpen}
         onTogglePanel={() => setPanelOpen((open) => !open)}

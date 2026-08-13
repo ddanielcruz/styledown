@@ -28,8 +28,8 @@ async function loadMath(): Promise<Pluggable> {
  * tree to React, and decides when a document has earned the weight of a typesetter.
  *
  * It carries no layout utilities of its own. The sheet — its width, its margins, its
- * typography — is `src/styles/document.css`, driven by the custom properties set below;
- * M7 exports that same pairing as a standalone file.
+ * typography — is `src/styles/document.css`, driven by the custom properties set below.
+ * `export-html.ts` writes that same pairing out as a standalone file.
  */
 export function Preview({ markdown, styles }: PreviewProps) {
   const [math, setMath] = useState<Pluggable>();
