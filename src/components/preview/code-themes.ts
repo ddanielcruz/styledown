@@ -18,7 +18,7 @@ import nord from 'highlight.js/styles/nord.min.css?inline';
  *
  * All six minify to 8.4KB together, so carrying them in the bundle costs less than the
  * request that would otherwise fetch one — and nothing has to be waited for before a
- * print. M7's exporter inlines the same string.
+ * print. The HTML exporter inlines the same string.
  */
 export const CODE_THEME_CSS: Record<CodeTheme, string> = {
   'github-light': githubLight,

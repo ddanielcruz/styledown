@@ -187,9 +187,11 @@ await sleep(1500);
 console.log(
   'state:',
   await evaluate(`JSON.stringify({
+    // The rule, not every stylesheet that mentions one — the document's own runs to
+    // hundreds of lines of commentary and drowns the answer.
     pageRules: [...document.querySelectorAll('style')]
-      .map((style) => style.textContent)
-      .filter((css) => css.includes('@page')),
+      .map((style) => style.textContent.trim())
+      .filter((css) => css.startsWith('@page')),
     pageSize: document.querySelector('.styledown-doc').dataset.pageSize,
     // A document with no fenced block is a fair thing to print, and reaching into one
     // that is not there took the whole probe down with it.

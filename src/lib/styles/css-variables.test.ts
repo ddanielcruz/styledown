@@ -9,10 +9,20 @@ describe('toCssVariables', () => {
       '--doc-font-body': expect.stringContaining('Inter'),
       '--doc-font-size': '16px',
       '--doc-accent': DEFAULT_STYLES.accent,
+      '--doc-accent-ink': DEFAULT_STYLES.accent,
       '--doc-page-width': '210mm',
       '--doc-page-height': '297mm',
       '--doc-page-margin': '22mm',
     });
+  });
+
+  it('parts the accent from its ink only when the accent cannot be read', () => {
+    const pale = toCssVariables({ ...DEFAULT_STYLES, accent: '#facc15' });
+
+    // The reader's yellow still tints every rule in the document; only the text it would
+    // have been illegible as is darkened.
+    expect(pale['--doc-accent']).toBe('#facc15');
+    expect(pale['--doc-accent-ink']).not.toBe('#facc15');
   });
 
   it('emits nothing for the code theme, which is a stylesheet rather than a variable', () => {

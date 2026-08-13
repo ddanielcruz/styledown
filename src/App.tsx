@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Group, Panel, Separator } from 'react-resizable-panels';
 
-import { Editor } from '@/components/editor/editor';
+import { LazyEditor } from '@/components/editor/lazy-editor';
 import { Preview } from '@/components/preview/preview';
 import { StylePanel } from '@/components/style-panel/style-panel';
 import { TopBar } from '@/components/top-bar/top-bar';
@@ -17,6 +17,7 @@ function App() {
     <div className="flex h-svh flex-col">
       <TopBar
         content={content}
+        styles={styles}
         onOpen={setContent}
         panelOpen={panelOpen}
         onTogglePanel={() => setPanelOpen((open) => !open)}
@@ -27,7 +28,7 @@ function App() {
         <Group orientation="horizontal" className="app-panels flex-1">
           <Panel defaultSize="50" minSize="25">
             <div className="no-print h-full overflow-auto">
-              <Editor value={content} onChange={setContent} />
+              <LazyEditor value={content} onChange={setContent} />
             </div>
           </Panel>
 

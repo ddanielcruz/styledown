@@ -43,6 +43,10 @@ describe('fileNameOf', () => {
     expect(fileNameOf('Relatório Anual')).toBe('relatório-anual.md');
   });
 
+  it('takes the extension it is asked for', () => {
+    expect(fileNameOf('Q3 Postmortem', 'html')).toBe('q3-postmortem.html');
+  });
+
   it('falls back when there is no title, or nothing left of one', () => {
     expect(fileNameOf(undefined)).toBe('untitled.md');
     expect(fileNameOf('!!!')).toBe('untitled.md');
