@@ -1,10 +1,18 @@
+import type { Element } from 'hast';
 import { toJsxRuntime } from 'hast-util-to-jsx-runtime';
 import { useEffect, useMemo, useState } from 'react';
 import { Fragment, jsx, jsxs } from 'react/jsx-runtime';
 import type { Pluggable } from 'unified';
 
-import { containsMath, loadMathPlugin, renderMarkdown } from '@/lib/markdown';
-import { toCssVariables, toPageRule, type DocumentStyles } from '@/lib/styles';
+import {
+  containsMath,
+  loadDiagramRenderer,
+  loadMathPlugin,
+  mermaidSources,
+  rehypeMermaid,
+  renderMarkdown,
+} from '@/lib/markdown';
+import { FONT_STACKS, toCssVariables, toPageRule, type DocumentStyles } from '@/lib/styles';
 
 import { CODE_THEME_CSS } from './code-themes';
 
@@ -21,6 +29,22 @@ async function loadMath(): Promise<Pluggable> {
 }
 
 /**
+ * Every diagram drawn so far, and every one already tried.
+ *
+ * `attempted` holds the failures as well as the successes, so a diagram that will not parse
+ * is drawn once and then left as the source fence it already is. The font is part of the
+ * record because mermaid sizes each box to the text measured in the face it drew it in — a
+ * different body font is a different drawing, not the same one restyled.
+ */
+interface Drawings {
+  fontFamily: string;
+  diagrams: ReadonlyMap<string, Element>;
+  attempted: ReadonlySet<string>;
+}
+
+const NONE: Drawings = { fontFamily: '', diagrams: new Map(), attempted: new Set() };
+
+/**
  * The rendered document, and the only thing that survives into print — `print.css`
  * hides everything else by targeting `.styledown-doc`.
  *
@@ -33,12 +57,17 @@ async function loadMath(): Promise<Pluggable> {
  */
 export function Preview({ markdown, styles }: PreviewProps) {
   const [math, setMath] = useState<Pluggable>();
-  const tree = useMemo(() => renderMarkdown(markdown, math), [markdown, math]);
+  const [drawings, setDrawings] = useState<Drawings>(NONE);
+
+  const fontFamily = FONT_STACKS[styles.bodyFont];
+
+  // The document before anything that arrives late has touched it. It is what the two
+  // effects below ask their questions of — a typeset formula no longer looks like maths,
+  // and a drawn diagram no longer looks like a fence.
+  const plain = useMemo(() => renderMarkdown(markdown), [markdown]);
 
   useEffect(() => {
-    // Once loaded there is nothing left to detect: the tree comes back typeset, and
-    // `math` short-circuits this before the walk.
-    if (math || !containsMath(tree)) return;
+    if (math || !containsMath(plain)) return;
 
     let active = true;
     void loadMath().then((plugin) => {
@@ -50,7 +79,59 @@ export function Preview({ markdown, styles }: PreviewProps) {
     return () => {
       active = false;
     };
-  }, [math, tree]);
+  }, [math, plain]);
+
+  const drawn = drawings.fontFamily === fontFamily ? drawings : NONE;
+
+  useEffect(() => {
+    const sources = mermaidSources(plain);
+    const pending = sources.filter((source) => !drawn.attempted.has(source));
+    if (!pending.length) return;
+
+    let active = true;
+
+    void (async () => {
+      const draw = await loadDiagramRenderer();
+      const results = await Promise.all(pending.map((source) => draw(source, fontFamily)));
+      // Abandoned because the document moved on. Nothing is recorded, so whatever survived
+      // the edit is simply drawn again — which is what keeps the preview honest about the
+      // source as it is now rather than as it was three keystrokes ago.
+      if (!active) return;
+
+      setDrawings((previous) => {
+        const base = previous.fontFamily === fontFamily ? previous : NONE;
+        const diagrams = new Map(base.diagrams);
+        const attempted = new Set(base.attempted);
+
+        pending.forEach((source, index) => {
+          attempted.add(source);
+          const drawing = results[index];
+          if (drawing) diagrams.set(source, drawing);
+        });
+
+        // Forget the versions the document has moved past. Writing one diagram walks
+        // through dozens of them, and each one that drew left a whole SVG behind.
+        const current = new Set(sources);
+        for (const source of attempted) if (!current.has(source)) attempted.delete(source);
+        for (const source of diagrams.keys()) if (!current.has(source)) diagrams.delete(source);
+
+        return { fontFamily, diagrams, attempted };
+      });
+    })();
+
+    return () => {
+      active = false;
+    };
+  }, [drawn, fontFamily, plain]);
+
+  const tree = useMemo(() => {
+    const plugins: Pluggable[] = [];
+    if (math) plugins.push(math);
+    if (drawn.diagrams.size) plugins.push(rehypeMermaid(drawn.diagrams));
+
+    // A document with neither is rendered exactly once, which is nearly all of them.
+    return plugins.length ? renderMarkdown(markdown, plugins) : plain;
+  }, [drawn, markdown, math, plain]);
 
   const content = useMemo(() => toJsxRuntime(tree, { Fragment, jsx, jsxs }), [tree]);
 

@@ -1,8 +1,18 @@
+import type { Element } from 'hast';
+import type { Pluggable } from 'unified';
+
 import { CODE_THEME_CSS } from '@/components/preview/code-themes';
 import { titleOf } from '@/lib/document/title';
 import { documentFaces, toHtmlDocument } from '@/lib/export';
-import { containsMath, loadMathPlugin, renderMarkdown } from '@/lib/markdown';
-import type { DocumentStyles } from '@/lib/styles';
+import {
+  containsMath,
+  loadDiagramRenderer,
+  loadMathPlugin,
+  mermaidSources,
+  rehypeMermaid,
+  renderMarkdown,
+} from '@/lib/markdown';
+import { FONT_STACKS, type DocumentStyles } from '@/lib/styles';
 
 import { loadFontFaceCss } from './document-fonts';
 
@@ -18,6 +28,22 @@ import documentCss from '@/styles/document.css?inline';
 const withoutFontFaces = (css: string) => css.replace(/@font-face\s*{[^}]*}/g, '');
 
 /**
+ * Every diagram in the document, drawn. Unlike the preview, which shows what it has and
+ * fills in the rest as it arrives, the export waits: a file is written once and cannot come
+ * back for the diagram that had not finished.
+ */
+async function drawDiagrams(sources: string[], fontFamily: string): Promise<Map<string, Element>> {
+  const draw = await loadDiagramRenderer();
+  const drawings = await Promise.all(sources.map((source) => draw(source, fontFamily)));
+
+  return new Map(
+    sources
+      .map((source, index) => [source, drawings[index]] as const)
+      .filter((entry): entry is [string, Element] => entry[1] !== undefined),
+  );
+}
+
+/**
  * The document as a standalone file: one HTML page with its stylesheet, its code theme,
  * its typefaces and its page box inside it, and nothing to fetch.
  *
@@ -28,14 +54,22 @@ const withoutFontFaces = (css: string) => css.replace(/@font-face\s*{[^}]*}/g, '
  */
 export async function toExportedHtml(markdown: string, styles: DocumentStyles): Promise<string> {
   const plain = renderMarkdown(markdown);
+  const diagrams = mermaidSources(plain);
   const hasMaths = containsMath(plain);
 
-  const [tree, mathCss] = hasMaths
-    ? await Promise.all([
-        loadMathPlugin().then((math) => renderMarkdown(markdown, math)),
-        import('katex/dist/katex.min.css?inline').then(({ default: css }) => withoutFontFaces(css)),
-      ])
-    : [plain, undefined];
+  const [math, drawings, mathCss] = await Promise.all([
+    hasMaths ? loadMathPlugin() : undefined,
+    diagrams.length ? drawDiagrams(diagrams, FONT_STACKS[styles.bodyFont]) : undefined,
+    hasMaths
+      ? import('katex/dist/katex.min.css?inline').then(({ default: css }) => withoutFontFaces(css))
+      : undefined,
+  ]);
+
+  const plugins: Pluggable[] = [];
+  if (math) plugins.push(math);
+  if (drawings?.size) plugins.push(rehypeMermaid(drawings));
+
+  const tree = plugins.length ? renderMarkdown(markdown, plugins) : plain;
 
   return toHtmlDocument({
     tree,

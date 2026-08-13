@@ -296,6 +296,21 @@
   margin: calc(var(--doc-font-size) * 1.5) auto;
 }
 
+/*
+ * A diagram is an illustration and gets an illustration's treatment: its own space, and
+ * centred rather than ranged left, because a drawing narrower than the measure looks
+ * abandoned against the left margin in a way a photograph does not.
+ *
+ * Mermaid draws at `width: 100%` capped by an inline `max-width` of the diagram's natural
+ * size, so a small diagram stays small and a large one shrinks to the measure instead of
+ * running off it. Nothing here overrides that — it is the behaviour we want.
+ */
+.styledown-doc .diagram {
+  display: flex;
+  justify-content: center;
+  margin: calc(var(--doc-font-size) * 1.5) 0;
+}
+
 /* No italic: an italic run this long is measurably harder to read than the rule is worth. */
 .styledown-doc blockquote {
   margin: calc(var(--doc-font-size) * 1.5) 0;
@@ -626,6 +641,7 @@
    */
   .styledown-doc tr,
   .styledown-doc img,
+  .styledown-doc .diagram,
   .styledown-doc blockquote,
   .styledown-doc .katex-display {
     break-inside: avoid;

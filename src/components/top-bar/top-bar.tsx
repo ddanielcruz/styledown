@@ -138,7 +138,7 @@ export function TopBar({ content, styles, onOpen, panelOpen, onTogglePanel }: To
             than wrapped around the app: this is still the only tooltip in it. */}
         <TooltipProvider delay={150}>
           <Tooltip>
-            <TooltipTrigger className="text-muted-foreground hover:text-foreground hidden cursor-help items-center gap-1.5 text-xs transition-colors lg:flex">
+            <TooltipTrigger className="text-muted-foreground hover:text-foreground hidden cursor-help items-center gap-0.5 text-xs transition-colors lg:flex">
               <Info className="size-3.5" />
               Turn off <span className="font-medium">Headers and footers</span> when you print
             </TooltipTrigger>
