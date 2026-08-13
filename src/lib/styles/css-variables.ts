@@ -1,3 +1,4 @@
+import { accentInk } from './accent-ink';
 import type { DocumentStyles, FontFamily } from './document-styles';
 import { PAGE_HEIGHTS, PAGE_MARGINS, PAGE_WIDTHS } from './page-metrics';
 
@@ -29,6 +30,9 @@ export function toCssVariables(styles: DocumentStyles): Record<string, string> {
     '--doc-font-body': FONT_STACKS[styles.bodyFont],
     '--doc-font-size': `${styles.fontSize}px`,
     '--doc-accent': styles.accent,
+    // The same colour, dark enough to be read where it stops being decoration. Identical
+    // to the accent for all six swatches and for anything else legible — see `accent-ink`.
+    '--doc-accent-ink': accentInk(styles.accent),
     '--doc-page-width': PAGE_WIDTHS[styles.page.size],
     // Read only by the screen, as the sheet's minimum height. Print gets its page from
     // `@page` and would answer a height here with a second, empty sheet.
