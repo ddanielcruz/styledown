@@ -14,4 +14,5 @@ export {
   type FontFamily,
   type Margins,
   type PageSize,
+  type StyleOption,
 } from './document-styles';

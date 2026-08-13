@@ -5,26 +5,29 @@ import { Editor } from '@/components/editor/editor';
 import { Preview } from '@/components/preview/preview';
 import { StylePanel } from '@/components/style-panel/style-panel';
 import { TopBar } from '@/components/top-bar/top-bar';
-import { DEFAULT_DOCUMENT } from '@/lib/document/default-document';
-import { createDefaultStyles } from '@/lib/styles';
+import { usePersistedState } from '@/hooks/use-persisted-state';
 
 function App() {
-  const [markdown, setMarkdown] = useState(DEFAULT_DOCUMENT);
-  // Two direct children read this and one writes it, which is a prop each way — a context
-  // for that is ceremony. M6 gives it a hook when it also has to be persisted.
-  const [styles, setStyles] = useState(() => createDefaultStyles(navigator.languages));
+  // The document and its styles are one saved thing, so one hook owns both. Everything
+  // that reads them is still one level down — a context for that is still ceremony.
+  const { content, setContent, styles, setStyles } = usePersistedState();
   const [panelOpen, setPanelOpen] = useState(true);
 
   return (
     <div className="flex h-svh flex-col">
-      <TopBar panelOpen={panelOpen} onTogglePanel={() => setPanelOpen((open) => !open)} />
+      <TopBar
+        content={content}
+        onOpen={setContent}
+        panelOpen={panelOpen}
+        onTogglePanel={() => setPanelOpen((open) => !open)}
+      />
 
       <div className="flex flex-1 overflow-hidden">
         {/* Sizes are strings on purpose: this library reads a bare number as pixels. */}
         <Group orientation="horizontal" className="app-panels flex-1">
           <Panel defaultSize="50" minSize="25">
             <div className="no-print h-full overflow-auto">
-              <Editor value={markdown} onChange={setMarkdown} />
+              <Editor value={content} onChange={setContent} />
             </div>
           </Panel>
 
@@ -36,7 +39,7 @@ function App() {
                 much room this pane has, and stop drawing itself as a page when the answer is
                 "less than one"; the inset it used to carry came with it. */}
             <div className="@container h-full overflow-auto bg-neutral-100">
-              <Preview markdown={markdown} styles={styles} />
+              <Preview markdown={content} styles={styles} />
             </div>
           </Panel>
         </Group>

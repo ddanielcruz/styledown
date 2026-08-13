@@ -21,6 +21,15 @@ if (!window.ResizeObserver) {
   } as unknown as typeof ResizeObserver;
 }
 
+// Same absent layer, one level down: jsdom's `Range` has no `getClientRects`, and
+// CodeMirror asks for one whenever the document it is showing changes, to place the cursor.
+// It survives the throw and carries on, so this only keeps a stack trace out of the test
+// output — but an error nobody expects to fail is an error nobody reads.
+if (!Range.prototype.getClientRects) {
+  Range.prototype.getClientRects = () => Object.assign([], { item: () => null }) as DOMRectList;
+  Range.prototype.getBoundingClientRect = () => new DOMRect();
+}
+
 // jsdom ships no `matchMedia`. This app is media-query-shaped by nature — print styles are
 // a core mechanism — so anything that asks about `print` or a colour scheme needs a stub.
 // It always reports no match: components must not depend on a query being true in tests.
