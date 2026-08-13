@@ -65,14 +65,14 @@ describe('math rendering', () => {
   });
 
   it('typesets math once the plugin is passed in', async () => {
-    const tree = renderMarkdown('$x = 1$', await loadMathPlugin());
+    const tree = renderMarkdown('$x = 1$', [await loadMathPlugin()]);
 
     expect(findByClass(tree, 'katex')).toBeDefined();
     expect(findByClass(tree, 'language-math')).toBeUndefined();
   });
 
   it('leaves documents without math untouched by the plugin', async () => {
-    const tree = renderMarkdown('# Just a heading', await loadMathPlugin());
+    const tree = renderMarkdown('# Just a heading', [await loadMathPlugin()]);
 
     expect(findByClass(tree, 'katex')).toBeUndefined();
   });

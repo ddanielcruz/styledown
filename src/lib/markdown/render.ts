@@ -53,19 +53,21 @@ const processor = unified()
   .use(remarkMath)
   .use(remarkRehype)
   .use(rehypeSlug)
-  // `plainText: ['math']` keeps highlighting off the maths, which is not a language and
-  // belongs to KaTeX. `detect` stays off (its default): guessing the language of an
-  // unlabelled block gets it wrong often enough to be worse than leaving it plain.
-  .use(rehypeHighlight, { plainText: ['math'] })
+  // `plainText` keeps highlighting off the two fences that are not languages and belong to
+  // something else — KaTeX and mermaid. `detect` stays off (its default): guessing the
+  // language of an unlabelled block gets it wrong often enough to be worse than leaving it
+  // plain.
+  .use(rehypeHighlight, { plainText: ['math', 'mermaid'] })
   .use(markPlainCodeBlocks);
 
 /**
- * @param math the typesetter from `loadMathPlugin`, once a document has proved it needs
- * one. Omitted, maths stays visible as its own source.
+ * @param plugins the parts that arrive late — the typesetter from `loadMathPlugin`, and
+ * `rehypeMermaid` carrying whatever diagrams have been drawn. A document renders without
+ * either; maths and diagrams simply stay visible as their own source until they load.
  */
-export function renderMarkdown(markdown: string, math?: Pluggable): Root {
+export function renderMarkdown(markdown: string, plugins: Pluggable[] = []): Root {
   // Calling a frozen processor copies it, which is the supported way to extend one.
-  const pipeline = math ? processor().use([math]) : processor;
+  const pipeline = plugins.length ? processor().use(plugins) : processor;
 
   return pipeline.runSync(pipeline.parse(markdown));
 }

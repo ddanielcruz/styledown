@@ -31,7 +31,7 @@ describe('documentFaces', () => {
    * needs.
    */
   it('asks for the maths faces only once there is typeset maths', async () => {
-    const typeset = renderMarkdown('The bound is $O(n \\log n)$.', await loadMathPlugin());
+    const typeset = renderMarkdown('The bound is $O(n \\log n)$.', [await loadMathPlugin()]);
 
     expect(documentFaces(typeset).math).toBe(true);
     expect(facesOf('The bound is not $O(n)$-anything, since there is no maths here.').math).toBe(
