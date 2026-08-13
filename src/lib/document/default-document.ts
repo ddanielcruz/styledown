@@ -6,10 +6,15 @@
  * page as much as it is a document — and it exercises every construct the typography
  * styles, so the first paint is also the proof that the default design holds up.
  *
- * No maths and no diagrams here. KaTeX and mermaid load only for documents that contain
- * one, and putting either in the document everyone opens would quietly undo that — mermaid
- * especially, which is heavier than everything else on this page put together.
- * `docs/sample-document.md` is where the full range lives.
+ * No maths here. KaTeX loads only for documents that contain some, and putting a formula in
+ * the document everyone opens would quietly undo that. `docs/sample-document.md` is where
+ * the full range lives.
+ *
+ * The diagram is the deliberate exception, and it is not a free one: it means mermaid is
+ * fetched on every first load rather than only by the documents that draw something. It is
+ * here because a feature nobody sees is a feature nobody knows about — the fence is short,
+ * it arrives after the page has already painted, and deleting it costs the reader nothing
+ * they were waiting for.
  */
 export const DEFAULT_DOCUMENT = `# Styledown
 
@@ -65,6 +70,17 @@ export function renderMarkdown(markdown: string, math?: Pluggable): Root {
   - And change their marker as they go
 - [x] Task lists render as checkboxes
 - [ ] Which stay exactly as you wrote them
+
+### Diagrams
+
+A \`mermaid\` fence is drawn rather than printed:
+
+\`\`\`mermaid
+graph LR
+  A[Markdown] --> B[Styledown]
+  B --> C[PDF]
+  B --> D[HTML]
+\`\`\`
 
 ---
 
