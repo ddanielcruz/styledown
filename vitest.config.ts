@@ -33,6 +33,12 @@ export default defineConfig({
         test: {
           name: { label: 'ui', color: 'magenta' },
           environment: 'jsdom',
+          // Vitest stubs CSS imports to empty modules by default, which is right for a
+          // stylesheet nobody asserts on and wrong for the code themes: those are imported
+          // as text (`?inline`) and rendered as content, so stubbed out they leave an empty
+          // `<style>` and a test that cannot see which theme is in the document. Costs
+          // about half a second.
+          css: true,
           setupFiles: ['./vitest.setup.ts'],
           include: ['src/{components,hooks,state}/**/*.{test,spec}.{ts,tsx}'],
         },

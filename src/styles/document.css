@@ -40,6 +40,15 @@
   --doc-rule-strong: #cdd2da;
   --doc-surface: #f2f4f7;
 
+  /*
+   * The accent, as a rule rather than as paint. Every hairline in a technical document
+   * turned the full accent colour is a document in a highlighter; tinted, the colour is
+   * present on every page without competing with a word of the text. Derived rather than
+   * settable — it moves when the accent does, which is the whole point of it.
+   */
+  --doc-rule-accent: color-mix(in oklab, var(--doc-accent) 32%, var(--doc-rule));
+  --doc-rule-accent-strong: color-mix(in oklab, var(--doc-accent) 55%, var(--doc-rule-strong));
+
   --doc-leading: 1.7;
   --doc-radius: 6px;
 }
@@ -120,11 +129,24 @@
  * exactly a page wide the sheet fits but its shadow has nowhere to fall, and a shadow
  * clipped flat against the edge of the pane looks like a bug rather than a page.
  *
- * The width is written out because a container query cannot read a custom property. M5
- * makes the page size a setting, and this has to learn to follow it.
+ * A container query cannot read a custom property, so the widths are written out and the
+ * selector says which paper each one is about — Letter and Legal are 6mm wider than A4,
+ * and left to A4's threshold they would draw a page in a pane too narrow to hold one.
+ * `--doc-page-width` is still the single source: these two only decide when the framing
+ * appears, and `page-metrics.ts` is where the widths themselves come from.
  */
 @container (min-width: calc(210mm + 4rem)) {
-  .styledown-doc {
+  .styledown-doc[data-page-size='a4'] {
+    margin-block: 2rem;
+    box-shadow:
+      0 1px 2px rgb(16 24 40 / 6%),
+      0 8px 24px rgb(16 24 40 / 8%);
+  }
+}
+
+@container (min-width: calc(216mm + 4rem)) {
+  .styledown-doc[data-page-size='letter'],
+  .styledown-doc[data-page-size='legal'] {
     margin-block: 2rem;
     box-shadow:
       0 1px 2px rgb(16 24 40 / 6%),
@@ -175,9 +197,10 @@
   font-weight: 650;
   letter-spacing: -0.014em;
   margin-top: calc(var(--doc-font-size) * 2.25);
-  /* The hairline is what makes a long technical document scannable. */
+  /* The hairline is what makes a long technical document scannable, and it is on nearly
+     every page of one — which makes it the right place for the accent to live. */
   padding-bottom: calc(var(--doc-font-size) * 0.3);
-  border-bottom: 1px solid var(--doc-rule);
+  border-bottom: 1px solid var(--doc-rule-accent);
 }
 
 .styledown-doc h3 {
@@ -240,7 +263,7 @@
 .styledown-doc hr {
   height: 0;
   border: 0;
-  border-top: 1px solid var(--doc-rule);
+  border-top: 1px solid var(--doc-rule-accent);
   margin: calc(var(--doc-font-size) * 2.25) 0;
 }
 
@@ -255,7 +278,7 @@
 .styledown-doc blockquote {
   margin: calc(var(--doc-font-size) * 1.5) 0;
   padding-left: calc(var(--doc-font-size) * 1.1);
-  border-left: 3px solid var(--doc-rule-strong);
+  border-left: 3px solid var(--doc-rule-accent-strong);
   color: var(--doc-ink-muted);
 }
 
@@ -321,20 +344,38 @@
  * to the list, because `remark-gfm` puts `contains-task-list` on a list where only *some*
  * items are tasks, and the plain ones still need their bullets.
  *
- * The boxes render disabled (this is a document, not a form), which greys them out, so
- * the accent is the only thing keeping a ticked box legible.
+ * The boxes render disabled, because this is a document rather than a form — and a
+ * disabled native checkbox is drawn grey no matter what `accent-color` says, which is a
+ * ticked box that reads as broken and prints as a smudge. So the box is ours: an empty
+ * element we paint, which takes the accent, keeps its contrast on paper, and looks the
+ * same in every browser rather than four different ways.
  */
 .styledown-doc .task-list-item {
   list-style: none;
 }
 
 .styledown-doc .task-list-item input {
+  appearance: none;
+  -webkit-appearance: none;
   /* Hung back into the marker's slot, so a mixed list still lines up down one edge. */
   margin-left: -1.4em;
   margin-right: 0.5em;
   width: 0.9em;
   height: 0.9em;
-  accent-color: var(--doc-accent);
+  /* Nudged off the baseline: an optically centred box sits slightly below it. */
+  vertical-align: -0.08em;
+  border: 1px solid var(--doc-rule-strong);
+  border-radius: 3px;
+  background: #fff;
+  /* Chrome fades a disabled control; nothing here is interactive, so nothing is faded. */
+  opacity: 1;
+}
+
+.styledown-doc .task-list-item input:checked {
+  border-color: var(--doc-accent);
+  background: var(--doc-accent)
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='none' stroke='%23fff' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round' d='M3.5 8.5l3 3 6-6'/%3E%3C/svg%3E")
+    center / 0.72em no-repeat;
 }
 
 /* — Code — */
@@ -349,12 +390,21 @@
   margin: calc(var(--doc-font-size) * 1.5) 0;
   border: 1px solid var(--doc-rule);
   border-radius: var(--doc-radius);
-  /* The theme's background is on the `code` inside, and square corners would poke out
-   * through the radius. Scrolling lives on that `code`, so clipping here costs nothing. */
+  /* Scrolling lives on the `code` inside, so clipping here costs nothing on screen. */
   overflow: hidden;
   font-family: var(--doc-font-mono);
   font-size: 0.875em;
   line-height: 1.6;
+}
+
+/*
+ * The corners belong to whatever paints the background, and that is the `code`: the theme
+ * owns `.hljs`, and a square dark slab inside a rounded box pokes out at every corner.
+ * The clipping above hides that on screen and cannot in print — a clipped box may not
+ * break across a page — so the radius has to be on the painted element itself.
+ */
+.styledown-doc pre code {
+  border-radius: inherit;
 }
 
 /*
@@ -423,7 +473,7 @@
 .styledown-doc [data-footnotes] {
   margin-top: calc(var(--doc-font-size) * 2.5);
   padding-top: calc(var(--doc-font-size) * 1.2);
-  border-top: 1px solid var(--doc-rule);
+  border-top: 1px solid var(--doc-rule-accent);
   font-size: 0.875em;
   color: var(--doc-ink-muted);
 }

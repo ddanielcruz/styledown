@@ -3,11 +3,11 @@ import { PAGE_MARGINS, PAGE_WIDTHS } from './page-metrics';
 
 /**
  * Fontsource registers variable faces under a `… Variable` family name, so each stack
- * names that first, the static face second, and a generic last. Only Inter is bundled
- * today (M5 fetches the rest on demand); the others are still correct CSS in the
- * meantime — an unloaded family simply falls through to the next name.
+ * names that first, the static face second, and a generic last. All five are bundled by
+ * `src/main.tsx`; the fallbacks are what a reader sees for the moment a face is still
+ * being fetched, and what an exported HTML file falls back to on a machine without it.
  */
-const FONT_STACKS: Record<FontFamily, string> = {
+export const FONT_STACKS: Record<FontFamily, string> = {
   inter: "'Inter Variable', Inter, ui-sans-serif, system-ui, sans-serif",
   'source-sans-3':
     "'Source Sans 3 Variable', 'Source Sans 3', ui-sans-serif, system-ui, sans-serif",
@@ -20,9 +20,9 @@ const FONT_STACKS: Record<FontFamily, string> = {
  * The five settings, as the custom properties `src/styles/document.css` consumes. Set
  * on the document container, so changing one repaints without regenerating a stylesheet.
  *
- * `codeTheme` is deliberately absent. A highlight.js theme is a whole stylesheet of
- * token colours, not a value — M5 swaps the `<link>` rather than setting a variable.
- * Nothing here is missing.
+ * `codeTheme` is deliberately absent. A highlight.js theme is a whole stylesheet of token
+ * colours, not a value, so the preview swaps the stylesheet instead — see
+ * `src/components/preview/code-themes.ts`. Nothing here is missing.
  */
 export function toCssVariables(styles: DocumentStyles): Record<string, string> {
   return {

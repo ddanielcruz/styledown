@@ -50,12 +50,12 @@ src/
 │  ├─ style-panel/      # Right sidebar
 │  ├─ top-bar/          # New / Open / Save / Export / view mode
 │  └─ ui/               # shadcn primitives
-├─ state/               # Document + styles context
-├─ hooks/
 └─ styles/              # App CSS, the document stylesheet, print CSS
 ```
 
 **The one rule that matters:** `src/lib/**` never imports from `src/components/**`. The core is framework-free and testable without rendering anything; the UI is a consumer of it.
+
+The document and its styles live in `App`, as two `useState`s passed to the panel and the preview. There is no state directory and no context: one level of props is not a problem a context solves, and the day it crosses three is the day to add one.
 
 ## Data model
 
@@ -81,6 +81,8 @@ type PersistedState = {
 
 Name the tokens as though they were already settings — every future control is a token moving out of the stylesheet's defaults and into `DocumentStyles`, not a refactor.
 
+Each of the four unions is **derived from its list of options** — the labelled choices are declared, and the type is read back off them. A union and a menu written separately can disagree, and the failure is silent: a theme with no label is a blank row in a dropdown. This way they are one statement, so the panel can only offer what the type allows and `Record<PageSize, …>` still refuses to compile when a paper has no width. Only the page size has a default worth computing: it comes from the reader's locale, so `createDefaultStyles()` takes the locales as an argument rather than reaching for a browser inside `src/lib`.
+
 `toCssVariables()` turns those five into the `--doc-*` properties the stylesheet reads, set on the document container so a change repaints without regenerating a stylesheet. Two of them have a second consumer: `@page` cannot reliably read custom properties, and its `size` descriptor will not take a `var()` at all, so `toPageRule()` emits the page box as text and React hoists it into the head. Same source of truth, two ways out of it — kept honest by a test asserting the printed margin is the string the preview inset itself by. `codeTheme` produces no variable — a highlight.js theme is a whole stylesheet of token colours, so choosing one swaps the `<link>`.
 
 Persisted state is Zod-validated on read, falling back to defaults. A corrupted `localStorage` entry must never produce a broken app.
@@ -97,20 +99,24 @@ One default preset, plus exactly these five. Anything not listed is fixed by the
 | **Page setup**    | A4 / Letter / Legal · Narrow / Normal / Wide margins     | Locale-derived size, Normal margins |
 | **Code theme**    | GitHub Light/Dark, Atom One Light/Dark, Nord, Night Owl  | GitHub Light                        |
 
+They live in a sidebar rather than behind a menu, because every one of them is judged by looking at the document while it changes. It closes: a 1280px screen cannot show the editor, a whole page and the panel at once, and the page is the one worth keeping.
+
 The font list spans sans _and_ serif deliberately — five near-identical sans faces would be a worse menu. Heading and code fonts follow a designed pairing with the body font rather than being separately selectable; pairing type is a design skill, and letting users mix three arbitrary families mostly produces worse documents. Documents are light-background in v1; they're built to be printed.
 
 ## Assets and the privacy claim
 
-Fonts and code themes load from CDNs at runtime — bundling every typeface and theme would ship megabytes so each user can use two. The **defaults are bundled** — font and code theme both — so first paint is instant and the default experience never flashes unstyled.
+**Everything ships in the bundle. No CDN.** The plan was to fetch fonts and themes at runtime, on the assumption that bundling five typefaces means shipping megabytes. It doesn't: Fontsource splits each face by `unicode-range`, so a family nobody picks costs ~2.4KB of `@font-face` text and downloads nothing — the browser fetches a woff2 only when a rule matches text with it. Measured on first load: Inter (upright and italic), JetBrains Mono, and the app's own face. The other four families cost nothing until chosen. All six highlight.js themes minify to 8.4KB together and are carried as strings.
 
-The promise is about **content**: document text, styles, and images are never transmitted, and there's no account, sync, or analytics. We do **not** claim "offline" or "zero third-party requests" — neither is true, both are trivially disprovable in devtools, and an inaccurate privacy claim is worse than a modest accurate one.
+Two things fall out of that. There is no third party in the render path, so no face can still be arriving when the reader hits print. And **there are currently no third-party requests at all** — but the claim we make stays about **content**: document text, styles, and images are never transmitted, and there's no account, sync, or analytics. "Zero third-party requests" is a promise about how the app is built rather than what it does with your document, and it would be one bad dependency away from being a lie.
+
+The font menu sets each option in its own face, which is the one place that requests the other families — about 300KB, on opening a menu, to see what you are choosing.
 
 ## Key mechanisms
 
 - **Rendering** — `Markdown → remark (GFM, math) → rehype (slugs, highlight, mermaid placeholders, katex) → hast → React`. Stopping at hast keeps the pipeline framework-free and gives the preview and the HTML exporter one shared source, so they cannot drift. Synchronous, and measured fast enough not to need debouncing — 2.5 ms for a dense document, no dropped frames while typing. Mermaid renders asynchronously into placeholders so a slow diagram never blocks text.
 - **Weight that only some documents carry** — KaTeX is a quarter of a megabyte and most technical documents have no maths, so it loads only once a document proves it needs one; until then the TeX shows as its own source. Mermaid will work the same way. Highlighting, by contrast, is eager: nearly every technical document has code in it.
 - **Raw HTML in Markdown is dropped**, not rendered. Supporting `<details>` and friends needs `rehype-raw` plus a sanitisation policy, and its own answer for what a collapsed block means on paper. Deferred deliberately, not overlooked.
-- **Styling** — CSS custom properties set on the document container, consumed by a static stylesheet. Changing a setting updates a few variables; no stylesheet regeneration. The same variables drive screen, print, and HTML export, so all three match by construction.
+- **Styling** — CSS custom properties set on the document container, consumed by a static stylesheet. Changing a setting updates a few variables; no stylesheet regeneration. The same variables drive screen, print, and HTML export, so all three match by construction. The two settings a variable cannot carry — the page box and the code theme — are each one plain `<style>` element whose text is swapped. Deliberately **not** hoisted into the head by React: hoisted stylesheets are keyed by `href` and never removed, so choosing a paper you have already been on reuses an element sitting above the newer one and the document prints the paper before last. Found by printing and measuring, not by reading the code.
 - **PDF** — `window.print()` with a print stylesheet that hides the app chrome; `toPageRule()` generates the page box. Orphans and widows are set at the document root and inherit from there. `break-inside: avoid` guards table rows, images, blockquotes and display maths — deliberately **not** code blocks or list items: a fence taller than the space left jumps to the next page, and if it is taller than a whole page it splits anyway, so `avoid` buys a half-empty page and the break as well. Orphans and widows say what we actually meant, which is that a block may only split where it can leave three lines behind and carry three over. Anything that scrolls on screen has to be un-boxed for print, or its overflow is simply absent from the PDF with nothing to show the reader that text went missing.
 - **What print cannot do** — Chrome draws its own header and footer, and neither CSS nor `window.print()` can reach that switch; Blink has never implemented `@page` margin boxes, so page numbers of our own are not an option either. The app asks the reader to turn headers and footers off, which is the whole of the remedy. And **no page breaks are drawn on screen**: the preview is one continuous sheet, because a break we predict is a break the print engine remains free to put somewhere else.
 - **Persistence** — one active document plus styles in `localStorage`, debounced. `.md` import/export is the portability mechanism.
@@ -134,7 +140,7 @@ A free account can't serve Pages from a private repo, or protect its branches �
 - [x] **M2** — Rendering pipeline: GFM, code highlighting, math → _real documents render correctly_
 - [x] **M3** — The default design: tokens, bundled font, CSS variables → _it looks genuinely good_; go public, add the Pages deploy
 - [x] **M4** — Print quality: `@page`, break rules, orphans and widows → _PDFs paginate properly_
-- [ ] **M5** — The five controls → _adjustable_
+- [x] **M5** — The five controls → _adjustable_
 - [ ] **M6** — Persistence, `.md` import/export → _work survives a refresh_
 - [ ] **M7** — HTML and Markdown export
 - [ ] **M8** — Mermaid, lazy-loaded and code-split

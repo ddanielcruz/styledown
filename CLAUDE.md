@@ -21,7 +21,7 @@ Two Vitest projects: `lib` (node, no DOM) and `ui` (jsdom). TDD in `src/lib/**` 
 
 Test behaviour through what a user can see or do. A test that reaches into internal state is testing the wrong layer and will break on refactors that changed nothing real. Prefer fewer, sharper tests: a component test earns its place by covering a decision the component makes, not by proving it rendered.
 
-Some things tests can't reach — whether the default document looks good, whether a PDF paginates cleanly. Verify those by rendering and looking, never by reasoning about the CSS.
+Some things tests can't reach — whether the default document looks good, whether a PDF paginates cleanly. Verify those by rendering and looking, never by reasoning about the CSS. `scripts/print-to-pdf.mjs` drives a real Chrome through the real controls and `scripts/measure-pdf.mjs` reads the paper and margins back out of the file; anything that prints without `preferCSSPageSize` silently gives you US Letter and a measurement worth nothing.
 
 ## Commands
 

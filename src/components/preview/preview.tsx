@@ -4,10 +4,13 @@ import { Fragment, jsx, jsxs } from 'react/jsx-runtime';
 import type { Pluggable } from 'unified';
 
 import { containsMath, loadMathPlugin, renderMarkdown } from '@/lib/markdown';
-import { DEFAULT_STYLES, toCssVariables, toPageRule } from '@/lib/styles';
+import { toCssVariables, toPageRule, type DocumentStyles } from '@/lib/styles';
+
+import { CODE_THEME_CSS } from './code-themes';
 
 interface PreviewProps {
   markdown: string;
+  styles: DocumentStyles;
 }
 
 /** KaTeX and its stylesheet, fetched together so maths never paints half-styled. */
@@ -28,7 +31,7 @@ async function loadMath(): Promise<Pluggable> {
  * typography — is `src/styles/document.css`, driven by the custom properties set below;
  * M7 exports that same pairing as a standalone file.
  */
-export function Preview({ markdown }: PreviewProps) {
+export function Preview({ markdown, styles }: PreviewProps) {
   const [math, setMath] = useState<Pluggable>();
   const tree = useMemo(() => renderMarkdown(markdown, math), [markdown, math]);
 
@@ -51,27 +54,34 @@ export function Preview({ markdown }: PreviewProps) {
 
   const content = useMemo(() => toJsxRuntime(tree, { Fragment, jsx, jsxs }), [tree]);
 
-  // M5 lifts these into state; until then the defaults are the whole story.
-  const styles = DEFAULT_STYLES;
-  const { size, margins } = styles.page;
+  const { size } = styles.page;
 
   return (
     <>
       {/*
-       * The paper. React moves a `<style>` carrying `href` and `precedence` into the
-       * document head, which is the one place a page box has to be — and it is where
-       * M7's exporter will write the same rule.
+       * The code theme and the page box, each as one element whose text is swapped.
        *
-       * The `href` has to spell out the setting. React de-duplicates by it, so a fixed
-       * string would pin the first rule in place for the life of the page and the paper
-       * would quietly stop following the control M5 adds. Nothing else declares `@page`,
-       * so `precedence` has nothing to arbitrate here.
+       * Neither carries `href` and `precedence`, which is what would hand it to React to
+       * hoist into the head — and hoisted stylesheets are keyed by `href` and never taken
+       * out again. Encoding the setting in the `href` stops a stale rule being pinned in
+       * place, but it does not stop them piling up, and among equal `@page` rules the
+       * winner is the one inserted *last*. Go A4 → Letter → A4 and the second A4 reuses
+       * the element already sitting above Letter, so the document prints Letter while the
+       * panel says A4. Measured, not theorised: the PDF came out at 15mm with Wide
+       * selected. One element per concern cannot get that wrong.
+       *
+       * A page box does not have to be in the head to apply, and this one is not; what it
+       * cannot be is *inside* the article, where `document.css` gives `> :first-child` no
+       * top margin and a `<style>` in that slot would absorb the rule and leave the real
+       * first element pushed down the page.
        */}
-      <style href={`styledown-page-${size}-${margins}`} precedence="document">
-        {toPageRule(styles)}
-      </style>
+      <style>{CODE_THEME_CSS[styles.codeTheme]}</style>
+      <style>{toPageRule(styles)}</style>
 
-      <article className="styledown-doc" style={toCssVariables(styles)}>
+      {/* The paper size is on the element as well as in the variables: the sheet only
+          wears its frame when the pane can show a whole page, and a container query can
+          read neither a custom property nor a page box. */}
+      <article className="styledown-doc" data-page-size={size} style={toCssVariables(styles)}>
         {content}
       </article>
     </>
