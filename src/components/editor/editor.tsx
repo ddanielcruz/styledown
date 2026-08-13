@@ -1,7 +1,7 @@
 import { markdown } from '@codemirror/lang-markdown';
 import CodeMirror from '@uiw/react-codemirror';
 
-interface EditorProps {
+export interface EditorProps {
   value: string;
   onChange: (value: string) => void;
 }
