@@ -58,6 +58,15 @@
       }
     },
     {
+      // Command-line tools. Printing to stdout is what they are for, and driving a browser
+      // is a sequence — clicking a panel in parallel with itself is not a faster test.
+      "files": ["scripts/**"],
+      "rules": {
+        "no-console": "off",
+        "no-await-in-loop": "off"
+      }
+    },
+    {
       "files": ["**/*.{test,spec}.{ts,tsx}", "**/test/**"],
       "plugins": ["vitest"],
       "rules": {

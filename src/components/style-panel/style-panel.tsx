@@ -29,6 +29,10 @@ interface StylePanelProps {
  * A `fieldset` rather than a label and an id: three of these controls are a group of
  * buttons rather than one field, and a `legend` names a group natively — no generated ids
  * to keep in sync, and the name is announced on the way in.
+ *
+ * A `legend` names the group and not the control inside it, though. That is right for the
+ * button groups, whose buttons say what they are, and wrong for a select, which is one
+ * unnamed button announced as "combobox" — so those two carry the name themselves.
  */
 function Field({ label, children }: { label: ReactNode; children: ReactNode }) {
   return (
@@ -63,7 +67,11 @@ export function StylePanel({ styles, onChange }: StylePanelProps) {
         >
           {/* Set in the face it names. A font menu that shows every option in the same
               typeface is asking the reader to choose from memory. */}
-          <SelectTrigger className="w-full" style={{ fontFamily: FONT_STACKS[styles.bodyFont] }}>
+          <SelectTrigger
+            aria-label="Document font"
+            className="w-full"
+            style={{ fontFamily: FONT_STACKS[styles.bodyFont] }}
+          >
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -186,7 +194,7 @@ export function StylePanel({ styles, onChange }: StylePanelProps) {
           value={styles.codeTheme}
           onValueChange={(codeTheme) => codeTheme && set({ codeTheme })}
         >
-          <SelectTrigger className="w-full">
+          <SelectTrigger aria-label="Code theme" className="w-full">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>

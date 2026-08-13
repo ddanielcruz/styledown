@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 
@@ -61,5 +61,50 @@ describe('StylePanel', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Rose' }));
 
     expect(sheet().style.getPropertyValue('--doc-accent')).toBe('#be123c');
+  });
+
+  it('restyles the document from the font menu', async () => {
+    render(<App />);
+
+    await userEvent.click(screen.getByRole('combobox', { name: 'Document font' }));
+    await userEvent.click(await screen.findByRole('option', { name: 'Lora' }));
+
+    expect(sheet().style.getPropertyValue('--doc-font-body')).toContain('Lora');
+  });
+
+  it('swaps the code theme for exactly one stylesheet', async () => {
+    render(<App />);
+
+    await userEvent.click(screen.getByRole('combobox', { name: 'Code theme' }));
+    await userEvent.click(await screen.findByRole('option', { name: 'Nord' }));
+
+    // Nord's own background. Six stylesheets all define `.hljs`, so the count is half the
+    // assertion: the wrong number of them is the bug that made this an inline style.
+    const themes = [...document.querySelectorAll('style')].filter((style) =>
+      style.textContent?.includes('.hljs{'),
+    );
+
+    expect(themes).toHaveLength(1);
+    expect(themes[0]!.textContent).toContain('#2e3440');
+  });
+
+  it('resizes the document from the slider', async () => {
+    render(<App />);
+
+    /*
+     * Reached through the range input rather than by role, and the reason is worth
+     * recording. shadcn's wrapper asks for `thumbAlignment="edge"`, so Base UI positions
+     * the thumb by measuring the track — and in jsdom every `getBoundingClientRect()` is
+     * zeroes, so that measurement divides 0 by 0, comes back `NaN`, and the thumb keeps
+     * its `visibility: hidden`. An invisible element is correctly absent from the
+     * accessibility tree, so `getByRole('slider')` finds nothing. The input underneath is
+     * the real control, and in a browser it is exactly what the thumb wraps.
+     */
+    const slider = document.querySelector<HTMLInputElement>('input[type="range"]')!;
+    fireEvent.change(slider, { target: { value: '19' } });
+
+    // The panel unwraps what Base UI hands back: a slider that was given an array reports
+    // one, and passing the bare number straight through would set `19px` to `NaN`.
+    expect(sheet().style.getPropertyValue('--doc-font-size')).toBe('19px');
   });
 });
