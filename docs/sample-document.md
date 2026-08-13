@@ -85,6 +85,43 @@ $$
 Loading it is what proves the lazy path works: KaTeX is fetched only because this
 section exists.
 
+## Diagrams
+
+A `mermaid` fence is drawn rather than printed. Mermaid is fetched only because this
+section exists, and only the diagram types below come with it.
+
+```mermaid
+graph LR
+  A[Markdown] --> B[remark]
+  B --> C[rehype]
+  C --> D[hast]
+  D --> E[Preview]
+  D --> F[HTML file]
+  D --> G[PDF]
+```
+
+A second kind, to prove the split is per diagram type rather than all of mermaid at once:
+
+```mermaid
+sequenceDiagram
+  participant R as Reader
+  participant S as Styledown
+  R->>S: paste a document
+  S-->>R: a page, already styled
+  R->>S: print
+  S-->>R: a PDF that matches
+```
+
+And one that will not parse, because half-written diagrams are the normal state of a
+diagram being written:
+
+```mermaid
+graph TD
+  A -->
+```
+
+It stays exactly as it was typed — on screen, on paper, and in the exported file.
+
 ## Headings
 
 ### Third level

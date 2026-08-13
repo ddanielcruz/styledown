@@ -6,9 +6,10 @@
  * page as much as it is a document — and it exercises every construct the typography
  * styles, so the first paint is also the proof that the default design holds up.
  *
- * No maths here. KaTeX loads only for documents that contain some, and putting a formula
- * in the document everyone opens would quietly undo that. `docs/sample-document.md` is
- * where the full range lives.
+ * No maths and no diagrams here. KaTeX and mermaid load only for documents that contain
+ * one, and putting either in the document everyone opens would quietly undo that — mermaid
+ * especially, which is heavier than everything else on this page put together.
+ * `docs/sample-document.md` is where the full range lives.
  */
 export const DEFAULT_DOCUMENT = `# Styledown
 
@@ -43,6 +44,7 @@ the way a web page does.
 | Fenced code   | Highlighted by language, in a bundled face     |
 | Footnotes[^1] | Collected at the end, out of the reader's way  |
 | Maths         | Typeset with KaTeX, loaded only if you use it  |
+| Diagrams      | Mermaid, on the same terms                     |
 
 ### Code
 
