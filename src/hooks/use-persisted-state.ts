@@ -41,11 +41,16 @@ function readRaw(): string | null {
   }
 }
 
-function writeRaw(value: string): void {
+function writeRaw(value: string): boolean {
   try {
     localStorage.setItem(STORAGE_KEY, value);
+
+    return true;
   } catch {
-    /* no storage, or no room in it */
+    // No storage, or no room in it. Reported rather than swallowed: since images can be
+    // pasted into a document, a full origin is something a reader can actually reach, and
+    // a document that has quietly stopped being saved is worse than one that says so.
+    return false;
   }
 }
 
@@ -56,12 +61,14 @@ export function usePersistedState() {
     loadState(readRaw(), navigator.languages),
   );
 
+  const [saved, setSaved] = useState(true);
+
   useEffect(() => {
     const commit = () => {
       // Chrome offers `document.title` as the filename when you save a PDF, so this is not
       // only the browser tab — it is the name the reader's document ends up on disk under.
       document.title = titleOf(state.content) ?? APP_NAME;
-      writeRaw(serializeState(state));
+      setSaved(writeRaw(serializeState(state)));
     };
 
     const timer = setTimeout(commit, SAVE_DELAY);
@@ -93,5 +100,5 @@ export function usePersistedState() {
     [],
   );
 
-  return { content: state.content, setContent, styles: state.styles, setStyles };
+  return { content: state.content, setContent, styles: state.styles, setStyles, saved };
 }

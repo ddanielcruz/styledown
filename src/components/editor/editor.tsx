@@ -1,9 +1,15 @@
 import { markdown } from '@codemirror/lang-markdown';
 import CodeMirror, { EditorView } from '@uiw/react-codemirror';
+import { useMemo } from 'react';
+
+import { imageFolds } from './image-folds';
+import { imageInput, type Notify } from './image-input';
 
 export interface EditorProps {
   value: string;
   onChange: (value: string) => void;
+  /** Somewhere to report a paste that could not become an image. */
+  onNotice: Notify;
 }
 
 /**
@@ -18,16 +24,28 @@ export interface EditorProps {
  * already resizable, so the reader sets the measure by dragging rather than by reflowing
  * their source.
  *
+ * What is added rather than removed is images, as two extensions rather than as anything
+ * wrapped around the component: pasting and dropping need the position under the pointer
+ * and a transaction to dispatch, and folding a data URI needs the document. The editor
+ * already has all three.
+ *
  * `EditorView` comes from the React wrapper's own re-export rather than from
  * `@codemirror/view`: CodeMirror's modules must be a single instance, and taking it from
  * the package that owns the instance is how that stays true.
  */
-export function Editor({ value, onChange }: EditorProps) {
+export function Editor({ value, onChange, onNotice }: EditorProps) {
+  // Held still on purpose: a fresh array is a fresh configuration, and CodeMirror rebuilds
+  // its extensions every time it is handed one.
+  const extensions = useMemo(
+    () => [markdown(), EditorView.lineWrapping, imageInput(onNotice), imageFolds()],
+    [onNotice],
+  );
+
   return (
     <CodeMirror
       value={value}
       onChange={onChange}
-      extensions={[markdown(), EditorView.lineWrapping]}
+      extensions={extensions}
       height="100%"
       className="h-full text-sm"
       basicSetup={{
