@@ -10,11 +10,22 @@ import type { Margins, PageSize } from './document-styles';
  * milestone exists to prevent.
  */
 
-/** Letter and Legal share a width and differ only in height, which nothing reads on screen. */
+/** Letter and Legal share a width and differ only in height. */
 export const PAGE_WIDTHS: Record<PageSize, string> = {
   a4: '210mm',
   letter: '216mm',
   legal: '216mm',
+};
+
+/**
+ * Only the screen reads these: the sheet is drawn at least one page tall, so a document of
+ * three lines still looks like a page with three lines on it rather than a slip of paper.
+ * Print takes its height from the paper in the tray, by name.
+ */
+export const PAGE_HEIGHTS: Record<PageSize, string> = {
+  a4: '297mm',
+  letter: '279.4mm',
+  legal: '355.6mm',
 };
 
 /**

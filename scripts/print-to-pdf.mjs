@@ -191,7 +191,12 @@ console.log(
       .map((style) => style.textContent)
       .filter((css) => css.includes('@page')),
     pageSize: document.querySelector('.styledown-doc').dataset.pageSize,
-    codeBackground: getComputedStyle(document.querySelector('.styledown-doc pre code')).backgroundColor,
+    // A document with no fenced block is a fair thing to print, and reaching into one
+    // that is not there took the whole probe down with it.
+    codeBackground: (() => {
+      const code = document.querySelector('.styledown-doc pre code');
+      return code ? getComputedStyle(code).backgroundColor : 'no code in this document';
+    })(),
   })`),
 );
 
