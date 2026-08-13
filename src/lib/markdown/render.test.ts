@@ -95,7 +95,7 @@ describe('renderMarkdown', () => {
 
   it('does not touch the DOM, so it can run anywhere', () => {
     // The `lib` Vitest project runs without jsdom on purpose: this pipeline has to
-    // stay usable outside a browser (tests, and the export path at M7).
+    // stay usable outside a browser — the tests, and the exporter's own tree.
     expect(typeof document).toBe('undefined');
     expect(() => renderMarkdown('# ok')).not.toThrow();
   });

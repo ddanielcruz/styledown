@@ -11,8 +11,8 @@ import { PAGE_MARGINS, PAGE_SIZE_KEYWORDS } from './page-metrics';
  * truth, a second way out of it.
  *
  * Returned as a string rather than injected here because `src/lib` is framework-free:
- * the app hoists this into a `<style>`, and M7's exporter writes it into the file it
- * generates.
+ * the app puts this in a `<style>`, and the HTML exporter writes it into the file it
+ * generates — which is what makes an exported document print on the paper it was set on.
  */
 export function toPageRule(styles: DocumentStyles): string {
   const size = PAGE_SIZE_KEYWORDS[styles.page.size];

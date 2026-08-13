@@ -6,7 +6,7 @@
  * 1. It is plain CSS. No `@apply`, no utilities, no `@layer`. Unlayered rules beat every
  *    Tailwind layer in the cascade, so this wins over preflight — which resets headings
  *    to `font-size: inherit` and strips list markers — without a single `!important`.
- *    It also means M7's HTML exporter can read the file as text and inline it.
+ *    It also means the HTML exporter can read this file as text and inline it.
  * 2. Every rule is scoped under `.styledown-doc`. The scope keeps the app's chrome out
  *    of the document's business, and it also outranks the other unlayered stylesheets we
  *    load — the highlight.js theme and KaTeX — which would otherwise win or lose on
