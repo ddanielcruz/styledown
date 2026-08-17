@@ -100,3 +100,19 @@ Delete all of this and start writing — it is your document now.
 
 [^1]: Like this one, with a link back to where it was cited.
 `;
+
+/**
+ * Whether replacing this document would cost the reader anything.
+ *
+ * The one question `New` has to answer. An empty editor and an untouched sample are both
+ * "nothing of yours is here", so replacing either needs no confirmation — and asking anyway
+ * would put a dialog in front of the button the empty state exists to offer.
+ *
+ * Compared on the trimmed text because a document that has been through an editor tends to
+ * come back one newline different, and a stray blank line is not work.
+ */
+export function isUnedited(content: string): boolean {
+  const text = content.trim();
+
+  return text === '' || text === DEFAULT_DOCUMENT.trim();
+}

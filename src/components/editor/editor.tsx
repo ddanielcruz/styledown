@@ -48,6 +48,7 @@ export function Editor({ value, onChange, onNotice }: EditorProps) {
       extensions={extensions}
       height="100%"
       className="h-full text-sm"
+      placeholder="Write in Markdown. The document builds itself as you type."
       basicSetup={{
         lineNumbers: false,
         foldGutter: false,
