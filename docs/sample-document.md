@@ -122,6 +122,21 @@ graph TD
 
 It stays exactly as it was typed — on screen, on paper, and in the exported file.
 
+## Images
+
+An image pasted or dropped into the editor is downscaled, re-encoded, and kept in the
+document itself — there is nowhere else for it to go. The prose keeps a short reference
+and the bytes collect at the end, beside the footnotes:
+
+![A bar chart][img-1]
+
+A URL you type yourself stays a URL, and the preview fetches it the way any page would:
+
+![The project's mark](https://raw.githubusercontent.com/ddanielcruz/styledown/main/public/favicon.svg)
+
+Exporting is where the two converge — the HTML file inlines the second one too, so the
+file opens with nothing to fetch.
+
 ## Headings
 
 ### Third level
@@ -291,3 +306,5 @@ distract from the mistake.
 [^2]:
     Which is the argument for wrapping long code lines in print even though wrapped
     code reads worse than code that does not need to wrap.
+
+[img-1]: data:image/webp;base64,UklGRhgDAABXRUJQVlA4IAwDAACwHwCdASpAAbQAPm02lkekI6IhJ/x4AIANiWlu4WhIn9F3xbTwH0s5wW981R948L6q/zHUkeiOea+Y6kj0RwuZ6ZMw1DWBmAKM3xzC2q/zHUi13+KVu09Qkmztets+Htnw9rtuEVCHh/BENk2PU8H4LOeXGncC6kBr6crwTKoutJQTn9D/MOfWVbfgEByrkZbMNA1zYY7lMguHLveWTO+kpAx6JBHFbKiQ8GG99eX4ol/1jQmfR/+Q7m3ewyemymeeQamJME7DoqPwzSb8Aki4zhVpqT0Z28ebHAKYLwWtzAQnTh2zuO3t/A9/tc5w95A1zKf0fYRObJwvmdqv8x1JHojqSPMoAP79WPEylze+FWFVYAAAeueBAAQn1e5o1zf57kBcd/vMlz3uRAuTdr71IW2CMefXfZC1AtSW/0YJDgvYfGVL4Q40yhpAxbuxPflxD2Pp3zLHbIjZyjZQUa/WjypSnQEE4MIxcQ7WxfVt/DKnoymji6Jf4AAACAAAxAdQvjbg8ZFyl6FzAKo75ezXa3WQ+7bfYO0j7JvRqVGEPh4QGbjedF2nt8p+KUiM9u06GsBdUWOEHG+42Dj/j52EFMeb3dK0LUkogiV8vtQxBsrHHwbM5DPVcF8DshG1TA4CYkVwkgS3V4bdUGNoe0haL6vDfHi0jy5oR74ZnRJnIojwwxDuPr69eWcQRjsGF1jq1EGtHHZ/vEiygGk244KD27RCuLJTYsI8r5AGOtQcSiD0aYVYjdOhhtMzx5Rf9MACnZSWzgLpRH520KAttPkwqKaZ1JevGNB9bdc2U5RtIeY8GVkc/od+DnZhOmSDpJT43J1VeVbqFPWdvk5x/cNMBvU1NT7wq8u0wtgDaD9JzAD37Tph5ZJFmKYi+o1O+M7GYkMrsh02I1QcELMm/z/PMPgBOiS9/nI+LTMBFATnEDHdjbcUqzs/nioPqmCLS8o4l6v2OtVfwxFUFpcnTgXNEdE84xHElTiF/vzvdEBF8YGLD3Y/je1SE80tbJPyUKg6lOAAGMQAAAAAAAA=

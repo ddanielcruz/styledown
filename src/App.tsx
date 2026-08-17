@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Group, Panel, Separator } from 'react-resizable-panels';
 
-import { LazyEditor } from '@/components/editor/lazy-editor';
+import { EditorPane } from '@/components/editor/editor-pane';
 import { Preview } from '@/components/preview/preview';
 import { StylePanel } from '@/components/style-panel/style-panel';
 import { TopBar } from '@/components/top-bar/top-bar';
@@ -10,7 +10,7 @@ import { usePersistedState } from '@/hooks/use-persisted-state';
 function App() {
   // The document and its styles are one saved thing, so one hook owns both. Everything
   // that reads them is still one level down — a context for that is still ceremony.
-  const { content, setContent, styles, setStyles } = usePersistedState();
+  const { content, setContent, styles, setStyles, saved } = usePersistedState();
   const [panelOpen, setPanelOpen] = useState(true);
 
   return (
@@ -27,9 +27,7 @@ function App() {
         {/* Sizes are strings on purpose: this library reads a bare number as pixels. */}
         <Group orientation="horizontal" className="app-panels flex-1">
           <Panel defaultSize="50" minSize="25">
-            <div className="no-print h-full overflow-auto">
-              <LazyEditor value={content} onChange={setContent} />
-            </div>
+            <EditorPane value={content} onChange={setContent} saved={saved} />
           </Panel>
 
           <Separator className="no-print bg-border hover:bg-ring w-px transition-colors" />

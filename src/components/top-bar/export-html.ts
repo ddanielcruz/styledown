@@ -3,7 +3,7 @@ import type { Pluggable } from 'unified';
 
 import { CODE_THEME_CSS } from '@/components/preview/code-themes';
 import { titleOf } from '@/lib/document/title';
-import { documentFaces, toHtmlDocument } from '@/lib/export';
+import { documentFaces, inlineRemoteImages, toHtmlDocument } from '@/lib/export';
 import {
   containsMath,
   loadDiagramRenderer,
@@ -70,6 +70,10 @@ export async function toExportedHtml(markdown: string, styles: DocumentStyles): 
   if (drawings?.size) plugins.push(rehypeMermaid(drawings));
 
   const tree = plugins.length ? renderMarkdown(markdown, plugins) : plain;
+
+  // Last, and on the finished tree: a diagram cannot contain one of these, and the faces
+  // below do not care what an image points at.
+  await inlineRemoteImages(tree);
 
   return toHtmlDocument({
     tree,

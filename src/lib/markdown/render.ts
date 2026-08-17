@@ -7,6 +7,8 @@ import remarkParse from 'remark-parse';
 import remarkRehype from 'remark-rehype';
 import { unified, type Pluggable } from 'unified';
 
+import { holdDataUris, restoreDataUris } from './data-uris';
+
 /**
  * Give every fenced block the theme's root class.
  *
@@ -69,5 +71,12 @@ export function renderMarkdown(markdown: string, plugins: Pluggable[] = []): Roo
   // Calling a frozen processor copies it, which is the supported way to extend one.
   const pipeline = plugins.length ? processor().use(plugins) : processor;
 
-  return pipeline.runSync(pipeline.parse(markdown));
+  // The parser never sees an image's bytes — see `data-uris.ts`. Nothing downstream can
+  // tell: the tree that comes back is the one it would have built anyway.
+  const held = holdDataUris(markdown);
+  const tree = pipeline.runSync(pipeline.parse(held.source));
+
+  restoreDataUris(tree, held);
+
+  return tree;
 }

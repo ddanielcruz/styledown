@@ -15,6 +15,11 @@
  * here because a feature nobody sees is a feature nobody knows about — the fence is short,
  * it arrives after the page has already painted, and deleting it costs the reader nothing
  * they were waiting for.
+ *
+ * No image either, and that one is not close. An image lives in the document as a data URI,
+ * so putting one here is not a lazy chunk that arrives late — it is bytes in the first
+ * chunk, on every first load, forever. The row in the table says the feature exists; the
+ * reader's own screenshot is the demonstration.
  */
 export const DEFAULT_DOCUMENT = `# Styledown
 
@@ -50,6 +55,7 @@ the way a web page does.
 | Footnotes[^1] | Collected at the end, out of the reader's way  |
 | Maths         | Typeset with KaTeX, loaded only if you use it  |
 | Diagrams      | Mermaid, on the same terms                     |
+| Images        | Paste or drop one — it is kept in the document |
 
 ### Code
 

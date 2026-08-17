@@ -6,3 +6,4 @@ export {
   type FontFace,
 } from './faces';
 export { toHtmlDocument, type HtmlDocumentInput } from './html';
+export { inlineRemoteImages } from './remote-images';
