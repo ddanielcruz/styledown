@@ -20,6 +20,16 @@ function App() {
 
   return (
     <div className="flex h-svh flex-col">
+      {/* First in the DOM and invisible until it is focused. The editor is one enormous
+          focus stop between the toolbar and everything after it, and a keyboard reader who
+          came to read rather than to write should not have to cross it. */}
+      <a
+        href="#document"
+        className="ring-ring bg-background sr-only z-50 rounded-md px-3 py-2 text-sm font-medium ring-2 focus:not-sr-only focus:absolute focus:top-2 focus:left-2"
+      >
+        Skip to the document
+      </a>
+
       <TopBar
         content={content}
         styles={styles}
@@ -29,17 +39,29 @@ function App() {
         onTogglePanel={() => setPanelOpen((open) => !open)}
       />
 
-      <div className="flex flex-1 overflow-hidden">
+      <main className="flex flex-1 overflow-hidden">
         {/* Sizes are strings on purpose: this library reads a bare number as pixels. */}
         <Group orientation="horizontal" className="flex-1">
           <Panel defaultSize="50" minSize="25">
             <EditorPane value={content} onChange={setContent} saved={saved} />
           </Panel>
 
-          <Separator className="no-print bg-border hover:bg-ring w-px transition-colors" />
+          {/* The library ships this as a focusable `separator` that arrow keys resize. What
+              it cannot supply is what it separates. */}
+          <Separator
+            aria-label="Resize the source and the document"
+            className="no-print bg-border hover:bg-ring w-px transition-colors"
+          />
 
           <Panel defaultSize="50" minSize="25">
-            <PreviewPane markdown={content} styles={styles} onNew={startFresh} />
+            <section
+              id="document"
+              tabIndex={-1}
+              aria-label="Document"
+              className="h-full outline-none"
+            >
+              <PreviewPane markdown={content} styles={styles} onNew={startFresh} />
+            </section>
           </Panel>
         </Group>
 
@@ -47,7 +69,7 @@ function App() {
             drag handle that earns nothing is still a drag handle to maintain. Closing it
             is how a narrow screen gets back the room to draw a whole page. */}
         {panelOpen && <StylePanel styles={styles} onChange={setStyles} />}
-      </div>
+      </main>
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import { markdown } from '@codemirror/lang-markdown';
-import CodeMirror, { EditorView } from '@uiw/react-codemirror';
+import CodeMirror, { EditorView, keymap } from '@uiw/react-codemirror';
 import { useMemo } from 'react';
 
 import { imageFolds } from './image-folds';
@@ -11,6 +11,37 @@ export interface EditorProps {
   /** Somewhere to report a paste that could not become an image. */
   onNotice: Notify;
 }
+
+/**
+ * Tab indents, as it does in every Markdown editor, and Escape lets a keyboard user out.
+ *
+ * Tab that indents is Tab that does not move focus, which is a keyboard trap in a product
+ * whose entire surface is this one pane. CodeMirror ships the remedy — tab-focus mode — and
+ * `defaultKeymap` already binds it to Ctrl-m, which nobody has ever guessed. Escape is the
+ * binding people try.
+ *
+ * It chains rather than overrides: `defaultKeymap` binds Escape to `simplifySelection`,
+ * which returns false when the selection is already a bare cursor, and a binding that
+ * returns false hands the key to the next one. So Escape collapses a selection if there is
+ * one, and otherwise opens a two-second window in which Tab moves focus. Registered after
+ * `basicSetup` so it is the lower-precedence half of that pair.
+ */
+const releaseTab = keymap.of([
+  {
+    key: 'Escape',
+    run: (view) => {
+      view.setTabFocusMode(2000);
+
+      return true;
+    },
+  },
+]);
+
+/** Named, because "edit text" is what a screen reader calls an unlabelled text box. */
+const named = EditorView.contentAttributes.of({
+  'aria-label': 'Markdown source',
+  'aria-keyshortcuts': 'Escape',
+});
 
 /**
  * The Markdown source pane. Bare on purpose for M1 — no toolbar, no shortcuts.
@@ -37,7 +68,14 @@ export function Editor({ value, onChange, onNotice }: EditorProps) {
   // Held still on purpose: a fresh array is a fresh configuration, and CodeMirror rebuilds
   // its extensions every time it is handed one.
   const extensions = useMemo(
-    () => [markdown(), EditorView.lineWrapping, imageInput(onNotice), imageFolds()],
+    () => [
+      markdown(),
+      EditorView.lineWrapping,
+      imageInput(onNotice),
+      imageFolds(),
+      releaseTab,
+      named,
+    ],
     [onNotice],
   );
 

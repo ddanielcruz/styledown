@@ -58,7 +58,10 @@ export function StylePanel({ styles, onChange }: StylePanelProps) {
   const isCustom = !ACCENT_SWATCHES.some((swatch) => swatch.value === styles.accent);
 
   return (
-    <aside className="no-print w-72 shrink-0 space-y-6 overflow-y-auto border-l p-4">
+    <aside
+      aria-label="Style settings"
+      className="no-print w-72 shrink-0 space-y-6 overflow-y-auto border-l p-4"
+    >
       <Field label="Document font">
         <Select
           items={FONT_OPTIONS}
