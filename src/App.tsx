@@ -28,11 +28,7 @@ function App() {
   const editor = <EditorPane value={content} onChange={setContent} saved={saved} />;
   const preview = <PreviewPane markdown={content} styles={styles} onNew={startFresh} />;
 
-  /*
-   * The document, wherever it currently is. Both a landmark and the skip link's target —
-   * the editor is one enormous focus stop between the toolbar and everything after it, and
-   * a keyboard reader who came to read rather than to write should not have to cross it.
-   */
+  /** The document, wherever it currently is: a landmark, and the skip link's target. */
   const documentRegion = (className?: string) => (
     <section
       id="document"
@@ -48,9 +44,11 @@ function App() {
 
   return (
     <div className="flex h-svh flex-col">
-      {/* First in the DOM, and invisible until it is focused. On a narrow screen it also
-          has to *reveal* the document, which is behind a switch rather than beside the
-          source — a skip link to something hidden is a skip link that does nothing. */}
+      {/* First in the DOM and invisible until it is focused. The editor is one enormous
+          focus stop between the toolbar and everything after it, and a keyboard reader who
+          came to read rather than to write should not have to cross it. On a narrow screen
+          it also has to *reveal* the document, which is behind a switch rather than beside
+          the source — a skip link to something hidden is a skip link that does nothing. */}
       <a
         href="#document"
         onClick={() => {

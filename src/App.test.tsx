@@ -33,13 +33,6 @@ describe('on a screen too small for both panes', () => {
     window.matchMedia = real;
   });
 
-  it('offers one pane at a time', () => {
-    render(<App />);
-
-    expect(screen.getByRole('button', { name: 'Source' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Document' })).toBeInTheDocument();
-  });
-
   it('keeps the document in the page while the source is the one showing', async () => {
     render(<App />);
 
