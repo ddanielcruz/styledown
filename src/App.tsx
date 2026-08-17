@@ -6,7 +6,7 @@ import { PreviewPane } from '@/components/preview/preview-pane';
 import { StylePanel } from '@/components/style-panel/style-panel';
 import { TopBar } from '@/components/top-bar/top-bar';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { useNarrowScreen } from '@/hooks/use-narrow-screen';
+import { roomForThePanel, useNarrowScreen } from '@/hooks/use-narrow-screen';
 import { usePersistedState } from '@/hooks/use-persisted-state';
 import { DEFAULT_DOCUMENT } from '@/lib/document/default-document';
 import { cn } from '@/lib/utils';
@@ -19,8 +19,8 @@ function App() {
   const { content, setContent, styles, setStyles, saved } = usePersistedState();
   const narrow = useNarrowScreen();
 
-  // Open by default, but not on a screen where it would be the only thing showing.
-  const [panelOpen, setPanelOpen] = useState(!narrow);
+  // Open by default, but only where opening it still leaves the document room to be read.
+  const [panelOpen, setPanelOpen] = useState(roomForThePanel);
   const [view, setView] = useState<View>('source');
 
   const startFresh = useCallback(() => setContent(DEFAULT_DOCUMENT), [setContent]);
