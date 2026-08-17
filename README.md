@@ -44,7 +44,7 @@ React + TypeScript on Vite, [unified](https://unifiedjs.com) (remark/rehype) for
 
 The document's own typography is plain, unlayered CSS in [`src/styles/document.css`](src/styles/document.css) — deliberately not Tailwind, so the HTML exporter can inline it as text.
 
-Developed and verified in Chrome, which is also the only browser whose print engine the PDF work is measured against.
+Developed in Chrome and checked in Firefox and WebKit — rendering, diagrams, image handling and export behave the same in all three. Printing is measured against Chrome's engine, which is the only one the scripts here can drive.
 
 ## Development
 
