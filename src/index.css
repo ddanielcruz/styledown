@@ -66,7 +66,13 @@
   --destructive: oklch(0.577 0.245 27.325);
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
+  /*
+   * Darker than the registry ships it. A focus indicator has to reach 3:1 against what is
+   * behind it (WCAG 1.4.11) and the default, oklch(0.708), is 2.3:1 on white — so every
+   * focus ring in the app was decorative rather than visible. This is 4.4:1, and it fixes
+   * the accent swatch's selected ring and the colour picker's at the same time.
+   */
+  --ring: oklch(0.55 0 0);
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
@@ -126,5 +132,21 @@
   }
   html {
     @apply font-sans;
+  }
+
+  /*
+   * Menus, tooltips and the one dialog all animate, and for some readers motion is the
+   * difference between using the app and closing it. Near-zero rather than `none` so
+   * anything waiting on `animationend` still gets its event and does not stay open forever.
+   */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
   }
 }

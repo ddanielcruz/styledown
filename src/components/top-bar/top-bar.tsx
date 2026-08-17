@@ -1,6 +1,7 @@
 import {
   ChevronDown,
   Download,
+  FilePlus2,
   FileText,
   FolderOpen,
   Globe,
@@ -8,8 +9,18 @@ import {
   PanelRight,
   Printer,
 } from 'lucide-react';
-import { useRef, type ChangeEvent } from 'react';
+import { useRef, useState, type ChangeEvent } from 'react';
 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -18,6 +29,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { isUnedited } from '@/lib/document/default-document';
 import { fileNameOf, titleOf } from '@/lib/document/title';
 import type { DocumentStyles } from '@/lib/styles';
 
@@ -28,6 +40,8 @@ interface TopBarProps {
   content: string;
   styles: DocumentStyles;
   onOpen: (content: string) => void;
+  /** Put the starting document back. Asked for here, and from the empty preview. */
+  onNew: () => void;
   panelOpen: boolean;
   onTogglePanel: () => void;
 }
@@ -44,9 +58,18 @@ interface TopBarProps {
  *
  * Open replaces the document outright, with no confirmation. Picking a file in the OS
  * dialog is already a deliberate act, and CodeMirror's own undo still reaches back over it.
+ *
+ * New is the one thing here that asks first, and only when there is an answer worth having:
+ * a click on a toolbar button has nothing in front of it, and the document it replaces may
+ * be an afternoon's work. An untouched document is replaced in silence — a dialog guarding
+ * nothing is a dialog people learn to dismiss without reading.
+ *
+ * Below `sm` the labels go and the icons stay, because the bar has to fit a phone. They are
+ * hidden visually rather than removed, so every button keeps the name it had.
  */
-export function TopBar({ content, styles, onOpen, panelOpen, onTogglePanel }: TopBarProps) {
+export function TopBar({ content, styles, onOpen, onNew, panelOpen, onTogglePanel }: TopBarProps) {
   const fileInput = useRef<HTMLInputElement>(null);
+  const [confirming, setConfirming] = useState(false);
 
   async function handleFile(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
@@ -57,6 +80,16 @@ export function TopBar({ content, styles, onOpen, panelOpen, onTogglePanel }: To
     event.target.value = '';
 
     if (file) onOpen(await file.text());
+  }
+
+  function handleNew() {
+    if (isUnedited(content)) onNew();
+    else setConfirming(true);
+  }
+
+  function replaceDocument() {
+    setConfirming(false);
+    onNew();
   }
 
   // Both names are decided at the click rather than held in state, so they always match
@@ -73,10 +106,10 @@ export function TopBar({ content, styles, onOpen, panelOpen, onTogglePanel }: To
 
   return (
     <header className="no-print flex h-12 shrink-0 items-center justify-between border-b px-4">
-      <div className="flex items-center gap-3">
-        <span className="text-sm font-medium">Styledown</span>
+      <div className="flex items-center gap-2 sm:gap-3">
+        <span className="hidden text-sm font-medium sm:inline">Styledown</span>
 
-        <span className="bg-border h-4 w-px" />
+        <span className="bg-border hidden h-4 w-px sm:inline-block" />
 
         {/* Out of the tab order and out of the accessibility tree: the button beside it is
             the control, and a second stop that opens the same dialog is noise. */}
@@ -90,9 +123,14 @@ export function TopBar({ content, styles, onOpen, panelOpen, onTogglePanel }: To
           onChange={handleFile}
         />
 
+        <Button size="sm" variant="ghost" onClick={handleNew}>
+          <FilePlus2 />
+          <span className="sr-only sm:not-sr-only">New</span>
+        </Button>
+
         <Button size="sm" variant="ghost" onClick={() => fileInput.current?.click()}>
           <FolderOpen />
-          Open
+          <span className="sr-only sm:not-sr-only">Open</span>
         </Button>
 
         {/*
@@ -106,7 +144,7 @@ export function TopBar({ content, styles, onOpen, panelOpen, onTogglePanel }: To
           {/* eslint-disable-next-line jsx-a11y/control-has-associated-label */}
           <DropdownMenuTrigger render={<Button size="sm" variant="ghost" />}>
             <Download />
-            Download
+            <span className="sr-only sm:not-sr-only">Download</span>
             <ChevronDown className="size-3.5 opacity-60" />
           </DropdownMenuTrigger>
 
@@ -128,19 +166,27 @@ export function TopBar({ content, styles, onOpen, panelOpen, onTogglePanel }: To
         </DropdownMenu>
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2 sm:gap-3">
         {/*
          * The one thing about the PDF we cannot fix in code, so the remedy is to ask.
          * The line says what to do; the tooltip says why, because an instruction with no
          * reason reads like superstition — and the reason is the interesting part.
+         *
+         * Below `lg` only the icon survives — but the advice does, which it did not when the
+         * whole trigger was hidden and the narrow screen was the one place it never appeared.
+         * The short name is a second element rather than an `aria-label`, so the wide layout
+         * is never announced as something other than what it says.
          */}
         {/* Base UI keeps the delay on the provider, not the tooltip. Scoped here rather
             than wrapped around the app: this is still the only tooltip in it. */}
         <TooltipProvider delay={150}>
           <Tooltip>
-            <TooltipTrigger className="text-muted-foreground hover:text-foreground hidden cursor-help items-center gap-0.5 text-xs transition-colors lg:flex">
+            <TooltipTrigger className="text-muted-foreground hover:text-foreground flex cursor-help items-center gap-0.5 text-xs transition-colors">
               <Info className="size-3.5" />
-              Turn off <span className="font-medium">Headers and footers</span> when you print
+              <span className="sr-only lg:hidden">About printing</span>
+              <span className="hidden lg:inline">
+                Turn off <span className="font-medium">Headers and footers</span> when you print
+              </span>
             </TooltipTrigger>
 
             {/* Portalled to the body, so it sits outside the header's `no-print` and needs
@@ -168,6 +214,27 @@ export function TopBar({ content, styles, onOpen, panelOpen, onTogglePanel }: To
           Print
         </Button>
       </div>
+
+      {/* Rendered only while it is open, so the dialog's own mount is what moves focus into
+          it — and closing returns focus to the button that asked. */}
+      {confirming && (
+        <AlertDialog open onOpenChange={setConfirming}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Replace this document?</AlertDialogTitle>
+              <AlertDialogDescription>
+                The document you have now is replaced by the one Styledown starts with. Download it
+                as <code>.md</code> first if you want to keep it.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={replaceDocument}>Replace</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
     </header>
   );
 }

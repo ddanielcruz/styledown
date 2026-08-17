@@ -40,7 +40,11 @@ export default defineConfig({
           // about half a second.
           css: true,
           setupFiles: ['./vitest.setup.ts'],
-          include: ['src/{components,hooks,state}/**/*.{test,spec}.{ts,tsx}'],
+          include: [
+            'src/{components,hooks,state}/**/*.{test,spec}.{ts,tsx}',
+            // `App` is a component too, and the layout decisions it makes are its own.
+            'src/*.{test,spec}.tsx',
+          ],
         },
       },
     ],
