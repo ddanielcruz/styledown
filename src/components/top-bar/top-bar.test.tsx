@@ -80,3 +80,41 @@ describe('download', () => {
     expect(html).not.toMatch(/<link|<script/i);
   });
 });
+
+/**
+ * New asks before it takes something away, and only then. The dialog is worth its weight
+ * exactly when there is work behind it — in front of the document we handed the reader it
+ * would be a habit to click through, which is how a confirmation stops being read.
+ */
+describe('new document', () => {
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
+  it('replaces the document we handed over without asking', async () => {
+    render(<App />);
+
+    await userEvent.click(screen.getByRole('button', { name: 'New' }));
+
+    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
+  });
+
+  it('asks before replacing a document that has been written in', async () => {
+    localStorage.setItem(
+      'styledown:state',
+      JSON.stringify({ version: 1, content: '# Q3 Postmortem\n\nWhat broke.\n', styles: {} }),
+    );
+
+    render(<App />);
+
+    await userEvent.click(screen.getByRole('button', { name: 'New' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Cancel' }));
+
+    expect(screen.getByRole('heading', { level: 1, name: 'Q3 Postmortem' })).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: 'New' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Replace' }));
+
+    expect(screen.getByRole('heading', { level: 1, name: 'Styledown' })).toBeInTheDocument();
+  });
+});

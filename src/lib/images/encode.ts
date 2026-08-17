@@ -26,14 +26,52 @@ const PASS_THROUGH = new Set(['image/svg+xml', 'image/gif']);
 const toBlob = (canvas: HTMLCanvasElement, type: string, quality: number): Promise<Blob | null> =>
   new Promise((resolve) => canvas.toBlob(resolve, type, quality));
 
-async function encoded(canvas: HTMLCanvasElement, sourceType: string): Promise<Blob | undefined> {
+/**
+ * How far below fully opaque a pixel has to be before it counts as transparent.
+ *
+ * Not `255`, because a canvas does not hand back exactly what was drawn on it. Measured in
+ * WebKit: filling a rectangle with an opaque gradient leaves a sixth of the pixels at alpha
+ * 254, which is its dithering and is invisible. Firefox returns 255 everywhere. Anything a
+ * reader would call transparency is nowhere near this line.
+ */
+const OPAQUE = 250;
+
+/**
+ * Whether the image we drew has any transparency to lose.
+ *
+ * Asked of the pixels rather than of the file's type, which is a bad proxy: a screenshot
+ * arrives as a PNG and is almost always opaque, and on a browser with no WebP encoder the
+ * difference between believing the type and reading the alpha channel is more than a
+ * megabyte. Measured at a few milliseconds for a 1600px image, and only reached by the
+ * browsers that need the answer.
+ */
+function isOpaque(context: CanvasRenderingContext2D, width: number, height: number): boolean {
+  try {
+    const { data } = context.getImageData(0, 0, width, height);
+
+    for (let index = 3; index < data.length; index += 4) if (data[index]! < OPAQUE) return false;
+
+    return true;
+  } catch {
+    // Nothing here can taint a canvas — the bytes came from the reader's own file — but a
+    // refusal must cost the image its size rather than cost the reader their image.
+    return false;
+  }
+}
+
+async function encoded(
+  canvas: HTMLCanvasElement,
+  context: CanvasRenderingContext2D,
+): Promise<Blob | undefined> {
   const webp = await toBlob(canvas, 'image/webp', QUALITY);
   if (!webp) return undefined;
 
-  // A browser that cannot encode WebP does not say so — it quietly hands back a PNG. A
-  // downscaled photograph as PNG is several times the JPEG it arrived as, so a source with
-  // no transparency to lose is asked for one instead.
-  if (webp.type === 'image/webp' || sourceType !== 'image/jpeg') return webp;
+  // A browser that cannot encode WebP does not say so — it quietly hands back a PNG, and a
+  // downscaled photograph as PNG is several times the JPEG it could have been. Measured in
+  // a WebKit build with no WebP encoder: the same screenshot is 1.8MB as PNG against a few
+  // tens of kilobytes either way with a lossy format, which is the difference between a
+  // handful of images fitting in the browser's five megabytes and one of them not.
+  if (webp.type === 'image/webp' || !isOpaque(context, canvas.width, canvas.height)) return webp;
 
   return (await toBlob(canvas, 'image/jpeg', QUALITY)) ?? webp;
 }
@@ -63,7 +101,7 @@ async function shrink(file: Blob): Promise<Blob | undefined> {
 
     context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
 
-    return await encoded(canvas, file.type);
+    return await encoded(canvas, context);
   } finally {
     bitmap.close();
   }

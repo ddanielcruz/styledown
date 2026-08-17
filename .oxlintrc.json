@@ -82,6 +82,9 @@
         "react/only-export-components": "off",
         "react/jsx-no-constructed-context-values": "off",
         "jsx-a11y/label-has-associated-control": "off",
+        // These render a control whose label is passed in as children by the caller. The
+        // rule reads the empty tag in the registry's own source.
+        "jsx-a11y/control-has-associated-label": "off",
         "no-underscore-dangle": "off"
       }
     }
