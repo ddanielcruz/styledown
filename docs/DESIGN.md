@@ -90,7 +90,9 @@ Each of the four unions is **derived from its list of options** — the labelled
 
 Persisted state is Zod-validated on read, falling back to defaults. A corrupted `localStorage` entry must never produce a broken app — and the validation is **per field**, because how far a bad value is allowed to reach is the whole question. Parsing the object as one unit would answer a single unrecognised colour by discarding everything the reader has written, which is a far worse failure than the one it is reporting. Only `version` is all-or-nothing: a format we do not recognise is not a document we can partially rescue.
 
-## The v1 control surface
+## The control surface
+
+### v1 — the five
 
 One default preset, plus exactly these five. Anything not listed is fixed by the design tokens.
 
@@ -108,13 +110,38 @@ The accent is two values, not one. All six swatches carry text on white — the 
 
 The font list spans sans _and_ serif deliberately — five near-identical sans faces would be a worse menu. Heading and code fonts follow a designed pairing with the body font rather than being separately selectable; pairing type is a design skill, and letting users mix three arbitrary families mostly produces worse documents. Documents are light-background in v1; they're built to be printed.
 
+### v2 — the depth (M12–M14)
+
+Five controls is less than the earlier project offered, and the gap is the reason people would go back to it. So the surface grows to roughly sixty: three font slots against ~20 families, weight, line height, letter spacing, paragraph spacing, per-level headings, tables, blockquotes, lists, links, code, images, a semantic colour set, and Mermaid themes.
+
+That is not a retreat from "every control must earn its place" — it is where that rule gets tested. Two things keep it honest:
+
+**Defaults never move.** Every control added is a token moving out of the stylesheet's defaults and into `DocumentStyles` at exactly the value it already rendered at. The default document is unchanged, byte for byte, after all three milestones. The depth is opt-in — today's five stay at the top of the panel, open; everything else is a collapsed group with a reset.
+
+**One descriptor table is the source of truth.** Each setting is declared once — its group, label, control kind, range, default, and the `--doc-*` property it writes — and four consumers read that declaration: the Zod schema, `toCssVariables`, the panel, and the reset. Sixty settings maintained as four parallel lists is four places to forget one, and the failure is silent: a control that edits a value nothing consumes, or a token consumed with nothing producing it. Guarded by a test that reads `src/styles/document.css` and asserts the two sets match. This is the same principle already used for the option unions, which are derived from their option lists rather than written beside them.
+
+Four settings stay bespoke because they do not produce a custom property: the page box emits `@page` text, the code theme swaps a stylesheet, the accent derives a second value, and the Mermaid theme is a config object.
+
+**Diagram themes are layers, not a setting.** M14 brings all seventeen, and what mermaid is handed is a merge in a fixed order: our base (`theme: 'base'`, plus the document's resolved font stack) → the chosen theme → overrides derived from the document → overrides from the reader. Only the first two exist at M14. The other two are the shape of every request this feature will attract — tint the diagram with my accent, paste the config I already have — and each of them is a layer at a merge point that already exists rather than a rewrite. The merge is a pure function, so the order is testable without drawing anything.
+
+A theme also has to survive paper. The earlier project's themes lean on `!important` and uppercased labels, which will argue with the print stylesheet; each one gets printed and looked at, and one that cannot be made legible there is fixed or dropped rather than shipped as a trap.
+
 ## Assets and the privacy claim
 
-**Everything ships in the bundle. No CDN.** The plan was to fetch fonts and themes at runtime, on the assumption that bundling five typefaces means shipping megabytes. It doesn't: Fontsource splits each face by `unicode-range`, so a family nobody picks costs ~2.4KB of `@font-face` text and downloads nothing — the browser fetches a woff2 only when a rule matches text with it. Measured on first load: Inter (upright and italic), JetBrains Mono, and the app's own face. The other four families cost nothing until chosen. All six highlight.js themes minify to 8.4KB together and are carried as strings.
+**Everything ships in the bundle**, which is how it works through M11. The plan was to fetch fonts and themes at runtime, on the assumption that bundling five typefaces means shipping megabytes. It doesn't: Fontsource splits each face by `unicode-range`, so a family nobody picks costs ~2.4KB of `@font-face` text and downloads nothing — the browser fetches a woff2 only when a rule matches text with it. Measured on first load: Inter (upright and italic), JetBrains Mono, and the app's own face. The other four families cost nothing until chosen. All six highlight.js themes minify to 8.4KB together and are carried as strings.
 
 Two things fall out of that. There is no third party in the render path, so no face can still be arriving when the reader hits print. And **there are currently no third-party requests at all** — but the claim we make stays about **content**: document text, styles, and images are never transmitted, and there's no account, sync, or analytics. "Zero third-party requests" is a promise about how the app is built rather than what it does with your document, and it would be one bad dependency away from being a lie.
 
 The font menu sets each option in its own face, which is the one place that requests the other families — about 300KB, on opening a menu, to see what you are choosing.
+
+**M12 moves the document's fonts to Google Fonts and drops the menu's previews.** Bundling holds at five families and does not hold at twenty: measured here, eight families are 2.5MB of woff2 across 94 files, and — more to the point — every family costs 4.8KB of `@font-face` text whether or not anyone picks it, which is a first-chunk cost that grows with the menu. Serving them lifts the cap entirely. The privacy claim stays exactly where it was, because it was always about content: the document never leaves the browser. A font request carries a family name and an IP address and never a byte of what you wrote.
+
+Two things do break and are handled rather than discovered:
+
+- **HTML export** has to fetch the stylesheet, read the file URLs out of it, and inline the bytes, where before it read them from our own bundle. `src/lib/export/remote-images.ts` already does this shape for linked images — bounded by a timeout and a size cap, best effort, degrading to the plain family name if the host will not answer.
+- **Print** can no longer assume the face has landed, which was one of the reasons for bundling. Print waits on `document.fonts.ready`.
+
+The app's own face and KaTeX's nine stay bundled: neither is on Google Fonts, and the chrome should not depend on the network. Code themes stay bundled too — all six are 8.4KB of strings together, and twenty-five would be about 35KB.
 
 ## Key mechanisms
 
@@ -136,7 +163,7 @@ The font menu sets each option in its own face, which is the one place that requ
 
 **Permanently:** accounts, any backend, telemetry, WYSIWYG editing, real-time collaboration.
 
-**Not in v1:** multi-document library, DOCX export, deep style customisation, shareable links.
+Everything else that is wanted but unscheduled is in **Deferred, and why**, below — with the reason it came off the list rather than just its name.
 
 ## Build order
 
@@ -158,16 +185,21 @@ A free account can't serve Pages from a private repo, or protect its branches �
 - [x] **M9** — Image paste/drop as data URIs
 - [x] **M10** — Launch polish: empty states and the New document that needs one, accessibility, small screens, README with screenshots, `CONTRIBUTING.md`
 
+Then the four that close the gap with the earlier project, which is what launch waits on. Each is tracked as an issue; the issue holds the breakdown, this doc holds the decisions.
+
+- [ ] **M11** — Editor toolbar, shortcuts and the dialog that lists them (#12)
+- [ ] **M12** — The style system: the descriptor table, the panel's groups, fonts from Google, and the typography controls (#13)
+- [ ] **M13** — Component styling: tables, blockquotes, lists, links, code, images (#14)
+- [ ] **M14** — The semantic colour set, and Mermaid's seventeen themes (#15)
+
 **M1 is the highest-value milestone** — everything after it is improvement. **M3 and M4 deserve the most time**; they decide whether the project is any good.
 
-## After v1
+## Deferred, and why
 
-The full styling surface is a known destination, not an open question. Every item below already exists as a design token, so exposing one is a small local change. Not committed — real feedback should be allowed to reorder this.
+These were on the list and came off it deliberately, so they are not mistaken later for things nobody thought of.
 
-- **Typography** — heading and code fonts separately, ~20 families, per-level heading control, line height, letter spacing, paragraph spacing
-- **Color** — full semantic set (~17 slots), dark-background documents
-- **Components** — tables, blockquotes, lists, links, inline code; ~25 code themes
-- **Images & diagrams** — sizing, alignment, shadow, border; ~13 Mermaid themes
-- **Presets & templates** — curated preset library, save your own, document starters
+- **Templates** — the earlier project shipped fourteen document starters, each with its own styles. Wanted, and cheap once the style system exists, which is the argument for doing it after M12 rather than before.
+- **Presets** — a curated library, and saving your own. Same reason: a preset is a `DocumentStyles` value, and there is no point designing the file format for one twice.
+- **Shareable links** — the document in the URL fragment, still with no server. The one feature the earlier project had that needed a backend, and the version worth building is the one that does not.
 
-Beyond styling: shareable URL links (document in the fragment, still no server) → local multi-document library → PWA → DOCX.
+Further out: dark-background documents, ~25 code themes, a local multi-document library, PWA, DOCX.
