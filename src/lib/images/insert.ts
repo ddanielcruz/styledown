@@ -58,17 +58,24 @@ function freeLabel(doc: string): string {
 }
 
 /**
- * The file's name as something worth reading aloud.
+ * What the browser calls a bitmap taken off the clipboard, where a screenshot has no name
+ * of its own to offer.
+ */
+const UNNAMED = 'image';
+
+/**
+ * The file's name as something worth reading aloud, and never nothing.
  *
- * `image` is what Chrome calls a bitmap taken off the clipboard. It describes nothing a
- * reader cannot already see, and an empty alt is a better thing to hand a screen reader
- * than a lie — so a pasted screenshot arrives unnamed, with the empty alt selected.
+ * An image somebody pasted into a document is content rather than decoration, so an empty
+ * alt is its own kind of lie — it tells a screen reader to skip the thing the paragraph is
+ * about. A placeholder is not a description either, but it arrives *selected*, so it is one
+ * keystroke from being replaced where an empty alt gives the writer nothing to react to.
  */
 function altFor(name: string | undefined): string {
   const stem = (name ?? '').replace(/\.[^.]+$/, '');
   const words = stem.replace(/[-_]+/g, ' ').replace(/\s+/g, ' ').trim();
 
-  if (!words || words.toLowerCase() === 'image') return '';
+  if (!words || words.toLowerCase() === UNNAMED) return 'Image';
 
   // A bracket in the filename would end the alt early and leave the rest as loose text.
   return words.replace(/([[\]])/g, '\\$1');

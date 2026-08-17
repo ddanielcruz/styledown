@@ -33,21 +33,23 @@ describe('imageInsertion', () => {
     const doc = '# Title\n\nA paragraph.\n';
 
     expect(insert(doc, doc.length).text).toBe(
-      `# Title\n\nA paragraph.\n\n![][img-1]\n\n[img-1]: ${PNG}\n`,
+      `# Title\n\nA paragraph.\n\n![Image][img-1]\n\n[img-1]: ${PNG}\n`,
     );
   });
 
   it('opens a block of its own when the cursor is inside a paragraph', () => {
     const doc = 'Before.\n';
 
-    expect(insert(doc, 'Before.'.length).text).toBe(`Before.\n\n![][img-1]\n\n[img-1]: ${PNG}\n`);
+    expect(insert(doc, 'Before.'.length).text).toBe(
+      `Before.\n\n![Image][img-1]\n\n[img-1]: ${PNG}\n`,
+    );
   });
 
   it('adds no blank lines the document already has', () => {
     const doc = 'Before.\n\n\n\nAfter.\n';
 
     expect(insert(doc, 'Before.\n\n'.length).text).toBe(
-      `Before.\n\n![][img-1]\n\nAfter.\n\n[img-1]: ${PNG}\n`,
+      `Before.\n\n![Image][img-1]\n\nAfter.\n\n[img-1]: ${PNG}\n`,
     );
   });
 
@@ -55,13 +57,15 @@ describe('imageInsertion', () => {
     // Where the cursor is left after an image is inserted: inside the alt, ready to name it.
     const doc = '![tiny][img-1]\n\n# Title\n\n[img-1]: data:image/png;base64,AA\n';
 
-    expect(insert(doc, '![tiny'.length).text).toContain('![tiny][img-1]\n\n![][img-2]\n\n# Title');
+    expect(insert(doc, '![tiny'.length).text).toContain(
+      '![tiny][img-1]\n\n![Image][img-2]\n\n# Title',
+    );
   });
 
   it('takes a label the document is not already using', () => {
     const doc = `See [img-1] and [img-2].\n\n[img-1]: /a.png\n  [img-2]: /b.png\n`;
 
-    expect(insert(doc, 0).text).toContain('![][img-3]');
+    expect(insert(doc, 0).text).toContain('![Image][img-3]');
   });
 
   it('names the image after the file, and selects the name for replacing', () => {
@@ -71,13 +75,14 @@ describe('imageInsertion', () => {
     expect(selected).toBe('architecture diagram');
   });
 
-  it('leaves the alt empty when the file has no name worth reading', () => {
-    // What Chrome calls a bitmap off the clipboard. "image" describes nothing a reader
-    // cannot already see, and an empty alt is a better thing to hand a screen reader.
+  it('falls back to a placeholder when the file has no name of its own', () => {
+    // What the browser calls a bitmap off the clipboard. The alt is never left empty —
+    // that reads as "decorative, skip it" — and it arrives selected, so it is one
+    // keystroke from being replaced.
     const { text, selected } = insert('# Title\n', 0, 'image.png');
 
-    expect(text).toContain('![][img-1]');
-    expect(selected).toBe('');
+    expect(text).toContain('![Image][img-1]');
+    expect(selected).toBe('Image');
   });
 
   it('keeps a bracket in the filename out of the reference', () => {
