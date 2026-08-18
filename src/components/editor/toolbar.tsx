@@ -28,9 +28,9 @@ import {
   formatShortcut,
   type ActionGroup,
   type ActionId,
-  type Platform,
 } from '@/lib/editor';
 
+import { PLATFORM } from './platform';
 import { ShortcutsDialog } from './shortcuts-dialog';
 
 interface EditorToolbarProps {
@@ -61,9 +61,6 @@ const ICONS: Record<ActionId, LucideIcon> = {
   rule: Minus,
 };
 
-const platform = (): Platform =>
-  /mac|iphone|ipad|ipod/i.test(navigator.userAgent) ? 'apple' : 'other';
-
 /**
  * The button's name, and its key where it has one.
  *
@@ -84,9 +81,11 @@ function Labelled({
   return (
     <Tooltip>
       <TooltipTrigger render={children} />
-      <TooltipContent className="no-print">
+      {/* Below, because the bar sits at the top of the pane and a tooltip above it lands
+          on the document actions in the header. */}
+      <TooltipContent side="bottom" className="no-print">
         {label}
-        {binding && <Kbd>{formatShortcut(binding, platform())}</Kbd>}
+        {binding && <Kbd>{formatShortcut(binding, PLATFORM)}</Kbd>}
       </TooltipContent>
     </Tooltip>
   );
@@ -144,36 +143,43 @@ export function EditorToolbar({ ready, onAction, onImages }: EditorToolbarProps)
     });
 
   return (
-    <div className="no-print shrink-0 [scrollbar-width:none] overflow-x-auto border-b [&::-webkit-scrollbar]:hidden">
+    <div className="no-print shrink-0 border-b">
       <TooltipProvider delay={400}>
-        <Toolbar aria-label="Formatting" className="w-max px-2 py-1.5">
-          {ACTION_GROUPS.map((group, index) => (
-            <ToolbarGroup key={group.id} aria-label={group.label}>
-              {index > 0 && <ToolbarSeparator />}
-              {buttonsIn(group.id)}
+        <Toolbar aria-label="Formatting" className="gap-0 px-2 py-1.5">
+          {/* The half that scrolls. Everything in it is still a `Toolbar.Button`, so the
+              arrow keys reach whatever the strip has pushed out of sight. */}
+          <div className="flex min-w-0 flex-1 [scrollbar-width:none] items-center gap-0.5 overflow-x-auto [&::-webkit-scrollbar]:hidden">
+            {ACTION_GROUPS.map((group, index) => (
+              <ToolbarGroup key={group.id} aria-label={group.label} className="shrink-0">
+                {index > 0 && <ToolbarSeparator />}
+                {buttonsIn(group.id)}
 
-              {/* Beside the link and the code block, because it is the third thing a reader
-                  puts into a document rather than a thing they do to what is there. */}
-              {group.id === 'insert' && (
-                <Labelled label="Image">
-                  <ToolbarButton
-                    aria-label="Image"
-                    disabled={!ready}
-                    onMouseDown={(event) => event.preventDefault()}
-                    onClick={() => fileInput.current?.click()}
-                  >
-                    <ImagePlus />
-                  </ToolbarButton>
-                </Labelled>
-              )}
-            </ToolbarGroup>
-          ))}
+                {/* Beside the link and the code block, because it is a third thing a reader
+                    puts into a document rather than a thing they do to what is there. */}
+                {group.id === 'insert' && (
+                  <Labelled label="Image">
+                    <ToolbarButton
+                      aria-label="Image"
+                      disabled={!ready}
+                      onMouseDown={(event) => event.preventDefault()}
+                      onClick={() => fileInput.current?.click()}
+                    >
+                      <ImagePlus />
+                    </ToolbarButton>
+                  </Labelled>
+                )}
+              </ToolbarGroup>
+            ))}
+          </div>
 
+          {/* Pinned, outside the strip. It is the way out of not knowing what the rest of
+              the bar does, so scrolled off the end is the one place it must never be. */}
           <ToolbarSeparator />
 
           <Labelled label="Keyboard shortcuts">
             <ToolbarButton
               aria-label="Keyboard shortcuts"
+              className="shrink-0"
               onClick={() => setShowingShortcuts(true)}
             >
               <Keyboard />
