@@ -17,7 +17,7 @@ describe('the action table', () => {
   });
 
   it('does not advertise a key it also inherits', () => {
-    const ours = new Set(EDITOR_ACTIONS.map((action) => action.key));
+    const ours = new Set<string | undefined>(EDITOR_ACTIONS.map((action) => action.key));
 
     expect(INHERITED_SHORTCUTS.filter(({ key }) => ours.has(key))).toEqual([]);
   });
@@ -35,10 +35,10 @@ describe('the action table', () => {
     // an action wired to the wrong function, by proving each of them does something.
     const doc = 'Title\n\nsome words here\n';
 
-    for (const action of EDITOR_ACTIONS) {
-      const { doc: after } = applyEdit(doc, action.run(doc, { from: 8, to: 12 }));
+    const inert = EDITOR_ACTIONS.filter(
+      (action) => applyEdit(doc, action.run(doc, { from: 8, to: 12 })).doc === doc,
+    );
 
-      expect(after, action.id).not.toBe(doc);
-    }
+    expect(inert.map((action) => action.id)).toEqual([]);
   });
 });

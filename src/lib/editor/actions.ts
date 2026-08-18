@@ -24,6 +24,11 @@ export interface EditorAction {
   group: ActionGroup;
   /** A CodeMirror binding, where there is one. Some actions are worth a button and no key. */
   key?: string;
+  /**
+   * Whether the action wants what the reader last copied. Declared rather than asked for by
+   * name, so the adapter has one path through it instead of a list of exceptions.
+   */
+  wantsClipboard?: boolean;
   run: (doc: string, selection: Selection, clipboard?: string) => Edit;
 }
 
@@ -125,6 +130,8 @@ export const EDITOR_ACTIONS = [
     // Takes `deleteLine` from `defaultKeymap`, which still has `Mod-Shift-k`. A Markdown
     // editor where the most-guessed shortcut in the product deletes a line is worse.
     key: 'Mod-k',
+    // Where a URL almost always is at the moment somebody reaches for this.
+    wantsClipboard: true,
     run: insertLink,
   },
   {
@@ -138,8 +145,9 @@ export const EDITOR_ACTIONS = [
     id: 'rule',
     label: 'Horizontal rule',
     group: 'insert',
-    // No key. It is reached for once a document, and every binding left unclaimed is one the
-    // reader's own tools can still have.
+    // Said rather than left out: it is reached for once a document, and every binding left
+    // unclaimed is one the reader's own tools can still have.
+    key: undefined,
     run: insertRule,
   },
 ] as const satisfies readonly EditorAction[];

@@ -3,13 +3,17 @@ import CodeMirror, { EditorView, keymap } from '@uiw/react-codemirror';
 import { useMemo } from 'react';
 
 import { imageFolds } from './image-folds';
-import { imageInput, type Notify } from './image-input';
+import { imageInput } from './image-input';
+import type { Notify } from './insert-images';
+import { editorKeymap, markdownKeys, swallowSave } from './keymap';
 
 export interface EditorProps {
   value: string;
   onChange: (value: string) => void;
   /** Somewhere to report a paste that could not become an image. */
   onNotice: Notify;
+  /** The view, once there is one — which is what the toolbar acts through. */
+  onReady?: (view: EditorView) => void;
 }
 
 /**
@@ -44,7 +48,7 @@ const named = EditorView.contentAttributes.of({
 });
 
 /**
- * The Markdown source pane. Bare on purpose for M1 — no toolbar, no shortcuts.
+ * The Markdown source pane.
  *
  * `basicSetup` is trimmed rather than accepted wholesale: line numbers, fold gutters
  * and bracket matching are code-editor furniture, and this pane holds prose.
@@ -60,16 +64,26 @@ const named = EditorView.contentAttributes.of({
  * and a transaction to dispatch, and folding a data URI needs the document. The editor
  * already has all three.
  *
+ * The keymap goes in **first**, because two of its bindings have to be taken off somebody
+ * else: `defaultKeymap` owns `Mod-k`, and autocompletion answers `Mod-i`.
+ *
+ * `addKeymap: false` is not a rejection of what the language binds — `markdownKeys` puts
+ * the same two commands back, one of them configured. It is how there comes to be exactly
+ * one Enter binding rather than two at the same precedence.
+ *
  * `EditorView` comes from the React wrapper's own re-export rather than from
  * `@codemirror/view`: CodeMirror's modules must be a single instance, and taking it from
  * the package that owns the instance is how that stays true.
  */
-export function Editor({ value, onChange, onNotice }: EditorProps) {
+export function Editor({ value, onChange, onNotice, onReady }: EditorProps) {
   // Held still on purpose: a fresh array is a fresh configuration, and CodeMirror rebuilds
   // its extensions every time it is handed one.
   const extensions = useMemo(
     () => [
-      markdown(),
+      swallowSave,
+      editorKeymap,
+      markdownKeys,
+      markdown({ addKeymap: false }),
       EditorView.lineWrapping,
       imageInput(onNotice),
       imageFolds(),
@@ -84,6 +98,7 @@ export function Editor({ value, onChange, onNotice }: EditorProps) {
       value={value}
       onChange={onChange}
       extensions={extensions}
+      onCreateEditor={(view) => onReady?.(view)}
       height="100%"
       className="h-full text-sm"
       placeholder="Write in Markdown. The document builds itself as you type."
