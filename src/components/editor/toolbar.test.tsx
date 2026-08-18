@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it } from 'vitest';
 
@@ -56,6 +56,32 @@ describe('the formatting toolbar', () => {
 
     // Exactly one of them is in the tab order at a time; the arrow keys reach the rest.
     expect(buttons.filter((button) => button.tabIndex === 0)).toHaveLength(1);
+  });
+
+  /**
+   * The one button here that is not an action on the text. An SVG is what makes this
+   * reachable at all: every other format goes through `createImageBitmap` and a canvas,
+   * neither of which jsdom has, where an SVG is passed through as its own bytes.
+   */
+  it('puts a chosen image into the document', async () => {
+    await editorReady();
+
+    // Queried rather than found by role, because it is deliberately `aria-hidden`: the
+    // button beside it is the control, and the picker it opens is the browser's, not ours.
+    const picker = document.querySelector<HTMLInputElement>('input[type="file"][accept="image/*"]');
+
+    await userEvent.upload(
+      picker!,
+      new File(['<svg xmlns="http://www.w3.org/2000/svg" />'], 'a diagram.svg', {
+        type: 'image/svg+xml',
+      }),
+    );
+
+    const rendered = within(screen.getByRole('region', { name: 'Document' }));
+
+    await waitFor(() =>
+      expect(rendered.getByRole('img', { name: 'a diagram' })).toBeInTheDocument(),
+    );
   });
 
   it('says what the keys are', async () => {
