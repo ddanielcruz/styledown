@@ -1,6 +1,8 @@
 import path from 'node:path';
 
+import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
+import { playwright } from '@vitest/browser-playwright';
 import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
@@ -45,6 +47,33 @@ export default defineConfig({
             // `App` is a component too, and the layout decisions it makes are its own.
             'src/*.{test,spec}.tsx',
           ],
+          // The browser project's files sit in the same folders and would otherwise be
+          // picked up here too, where every one of them would fail for the reason they
+          // exist: jsdom cannot do the thing they are asking about.
+          exclude: ['**/*.browser.{test,spec}.tsx'],
+        },
+      },
+      {
+        extends: true,
+        // Tailwind is not in the root plugins because the other two projects do not need
+        // it — `lib` renders nothing and `ui` asserts on roles rather than pixels. Here it
+        // is the point: a layout test against unstyled HTML measures nothing.
+        plugins: [tailwindcss()],
+        test: {
+          name: { label: 'browser', color: 'cyan' },
+          include: ['src/**/*.browser.{test,spec}.tsx'],
+          setupFiles: ['./vitest.browser.setup.ts'],
+          browser: {
+            enabled: true,
+            headless: true,
+            provider: playwright(),
+            // The three engines a reader might arrive in. WebKit is Playwright's own build
+            // rather than Safari itself — same engine family, different build, and no
+            // macOS menu layer — so it catches what the engine does and says nothing about
+            // what Safari's menus do in front of it. `docs/DESIGN.md` records which
+            // questions that leaves open.
+            instances: [{ browser: 'chromium' }, { browser: 'firefox' }, { browser: 'webkit' }],
+          },
         },
       },
     ],

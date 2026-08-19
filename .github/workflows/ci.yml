@@ -18,7 +18,7 @@ jobs:
   ci:
     name: CI
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
 
     steps:
       - name: Checkout
@@ -60,3 +60,24 @@ jobs:
       - name: Build
         if: '!cancelled()'
         run: pnpm build
+
+      # Last because it is much the most expensive step, and everything above it can fail
+      # in seconds. The browsers are ~1GB of downloads, so they are cached on the lockfile:
+      # the version that decides which builds are wanted lives in `playwright`'s entry.
+      - name: Cache browsers
+        if: '!cancelled()'
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+
+      # `--with-deps` is the system libraries the three engines link against, which a bare
+      # runner does not have and the cache above cannot hold. It is a no-op once they are
+      # installed, and the browser downloads themselves are skipped on a cache hit.
+      - name: Install browsers
+        if: '!cancelled()'
+        run: pnpm exec playwright install --with-deps chromium firefox webkit
+
+      - name: Test in browsers
+        if: '!cancelled()'
+        run: pnpm test:browser

@@ -22,3 +22,8 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# What the browser project writes when a test fails: a screenshot of the page at the moment
+# it gave up, and whatever the run attached. Useful while fixing, never worth committing.
+.vitest-attachments
+__screenshots__
