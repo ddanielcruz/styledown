@@ -21,11 +21,12 @@ import App from '@/App';
 const MOD = navigator.platform.toLowerCase().includes('mac') ? 'Meta' : 'Control';
 
 /**
- * Firefox rejects `navigator.clipboard.readText()` about a second after it is asked, where
- * Chromium and WebKit refuse in the same tick. Only the link asks, so only the link waits —
- * see `run-action.ts`, which treats every refusal the same way and simply carries on.
+ * Only the link asks the clipboard, so only the link waits — and `run-action.ts` caps that
+ * wait, because Firefox refuses the read a second or more after being asked where the other
+ * two refuse in the same tick. This is that cap plus room to render; it failed here at five
+ * seconds before the cap existed, which is how the cap came to exist.
  */
-const CLIPBOARD_PATIENCE = 5000;
+const CLIPBOARD_PATIENCE = 2000;
 
 async function selectAll(content: string) {
   localStorage.setItem('styledown:state', JSON.stringify({ version: 1, content, styles: {} }));

@@ -72,7 +72,21 @@ export default defineConfig({
             // macOS menu layer — so it catches what the engine does and says nothing about
             // what Safari's menus do in front of it. `docs/DESIGN.md` records which
             // questions that leaves open.
-            instances: [{ browser: 'chromium' }, { browser: 'firefox' }, { browser: 'webkit' }],
+            instances: [
+              {
+                browser: 'chromium',
+                // The CI image runs as root, where Chromium refuses to start its sandbox.
+                // Dropping it is safe for exactly this: the only page any of these open is
+                // this app, built from this repository. Firefox and WebKit do not need it,
+                // and an instance's provider options replace the parent's rather than
+                // merging, so it is set here and nowhere else.
+                provider: playwright({
+                  launchOptions: { args: process.env.CI ? ['--no-sandbox'] : [] },
+                }),
+              },
+              { browser: 'firefox' },
+              { browser: 'webkit' },
+            ],
           },
         },
       },
