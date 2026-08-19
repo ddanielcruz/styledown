@@ -1,6 +1,14 @@
 import '@testing-library/jest-dom/vitest';
-import { cleanup } from '@testing-library/react';
+import { cleanup, configure } from '@testing-library/react';
 import { afterEach } from 'vitest';
+
+// Testing Library gives an async query one second, which is generous for a component that
+// has already rendered and not enough for one that has not been imported yet: the editor is
+// a separate chunk, and the first test to ask for it pays for resolving that import. Locally
+// it lands in about a tenth of a second; on a cold CI runner it took two and a half, which
+// failed as a timeout while the thing being waited for was working correctly. The condition
+// was right and only the budget was wrong, so the budget moves rather than the test.
+configure({ asyncUtilTimeout: 10_000 });
 
 // Testing Library only auto-registers its cleanup when it finds a global `afterEach`
 // (i.e. `test.globals: true`), which this project doesn't set. Without this, a second

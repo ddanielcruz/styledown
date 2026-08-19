@@ -8,6 +8,8 @@
  * CommonMark: nothing in the render pipeline has to know, and the `.md` is still a `.md`.
  */
 
+import { breaksAfter, breaksBefore, padding } from '@/lib/editor/blank-lines';
+
 export interface InsertableImage {
   /** The data URI, ready to be a link destination. */
   dataUrl: string;
@@ -80,41 +82,6 @@ function altFor(name: string | undefined): string {
   // A bracket in the filename would end the alt early and leave the rest as loose text.
   return words.replace(/([[\]])/g, '\\$1');
 }
-
-/**
- * Line breaks between this position and the nearest content, counting at most the two that
- * make a paragraph break. The edge of the document counts as two: nothing needs separating
- * from nothing.
- */
-function breaksBefore(doc: string, at: number): number {
-  let i = at;
-  let breaks = 0;
-
-  while (i > 0 && breaks < 2) {
-    const character = doc[i - 1];
-    if (character === '\n') breaks++;
-    else if (character !== ' ' && character !== '\t' && character !== '\r') break;
-    i--;
-  }
-
-  return i === 0 ? 2 : breaks;
-}
-
-function breaksAfter(doc: string, at: number): number {
-  let i = at;
-  let breaks = 0;
-
-  while (i < doc.length && breaks < 2) {
-    const character = doc[i];
-    if (character === '\n') breaks++;
-    else if (character !== ' ' && character !== '\t' && character !== '\r') break;
-    i++;
-  }
-
-  return i === doc.length ? 2 : breaks;
-}
-
-const padding = (breaks: number) => '\n'.repeat(2 - breaks);
 
 /** Anything that could be an image reference, finished or half-typed. */
 const REFERENCE = /!\[[^\]\n]*\](\[[^\]\n]*\]?)?/g;

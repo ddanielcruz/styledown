@@ -18,7 +18,7 @@ jobs:
   ci:
     name: CI
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
 
     steps:
       - name: Checkout
@@ -60,3 +60,45 @@ jobs:
       - name: Build
         if: '!cancelled()'
         run: pnpm build
+
+  # Its own job, so it runs beside the one above rather than after it: nothing here can
+  # tell you anything the cheap checks cannot, and a slow engine should not delay a
+  # formatting failure.
+  browsers:
+    name: Browsers
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    # Every engine, and every system library the three of them link against, already in the
+    # image. The alternative is `playwright install --with-deps` on a bare runner, which was
+    # measured here at over thirteen minutes and still unfinished — the browser downloads
+    # can be cached but the `apt` half of that cannot. The tag has to match the `playwright`
+    # version in package.json: the image holds the browser builds that version expects.
+    container:
+      image: mcr.microsoft.com/playwright:v1.62.1-noble
+
+    # The image runs as root, and the runner hands a container `HOME=/github/home`, which
+    # belongs to the image's `pwuser`. Firefox checks exactly that pairing and refuses to
+    # start: running as root inside somebody else's session is not a thing it will do. Root
+    # gets its own home instead, which is the whole of the disagreement.
+    env:
+      HOME: /root
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Test in browsers
+        run: pnpm test:browser

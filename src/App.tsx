@@ -96,7 +96,13 @@ function App() {
            * still reaches the paper — which is checked by printing, not by reading this.
            */
           <>
-            <div className={cn('h-full flex-1', (panelOpen || view !== 'source') && 'hidden')}>
+            {/* `min-w-0` because a flex item's minimum is its content by default, and the
+                toolbar's content is fifteen buttons: without it the source pane is as wide as
+                the bar wants and a phone scrolls the whole app sideways. The bar scrolls
+                inside itself instead, which is the point of it. */}
+            <div
+              className={cn('h-full min-w-0 flex-1', (panelOpen || view !== 'source') && 'hidden')}
+            >
               {editor}
             </div>
 
