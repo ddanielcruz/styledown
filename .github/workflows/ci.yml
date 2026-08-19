@@ -77,6 +77,13 @@ jobs:
     container:
       image: mcr.microsoft.com/playwright:v1.62.1-noble
 
+    # The image runs as root, and the runner hands a container `HOME=/github/home`, which
+    # belongs to the image's `pwuser`. Firefox checks exactly that pairing and refuses to
+    # start: running as root inside somebody else's session is not a thing it will do. Root
+    # gets its own home instead, which is the whole of the disagreement.
+    env:
+      HOME: /root
+
     steps:
       - name: Checkout
         uses: actions/checkout@v7
