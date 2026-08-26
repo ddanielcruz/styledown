@@ -1,7 +1,13 @@
+import type { EditorView } from '@uiw/react-codemirror';
 import { AlertTriangle } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState, type DragEvent } from 'react';
 
+import type { ActionId } from '@/lib/editor';
+
+import { insertImages } from './insert-images';
 import { LazyEditor } from './lazy-editor';
+import { runAction } from './run-action';
+import { EditorToolbar } from './toolbar';
 
 interface EditorPaneProps {
   value: string;
@@ -29,6 +35,7 @@ const NOTICE_DURATION = 8000;
 export function EditorPane({ value, onChange, saved }: EditorPaneProps) {
   const [notice, setNotice] = useState<{ text: string; key: number }>();
   const [dropping, setDropping] = useState(false);
+  const [view, setView] = useState<EditorView>();
   const nextKey = useRef(0);
 
   // Keyed rather than compared: pasting the same oversized image twice is two refusals, and
@@ -68,8 +75,27 @@ export function EditorPane({ value, onChange, saved }: EditorPaneProps) {
       }}
       onDrop={() => setDropping(false)}
     >
+      {/* Above the editor and in the first chunk, where the editor is in the second. Its
+          buttons are disabled until the view lands — a tenth of a second, alongside the
+          skeleton — rather than the toolbar itself arriving late. */}
+      <EditorToolbar
+        ready={view !== undefined}
+        onAction={(id: ActionId) => {
+          if (!view) return;
+
+          view.focus();
+          runAction(view, id);
+        }}
+        onImages={(files) => {
+          if (!view) return;
+
+          view.focus();
+          void insertImages(view, view.state.selection.main.head, files, notify);
+        }}
+      />
+
       <div className="min-h-0 flex-1 overflow-auto">
-        <LazyEditor value={value} onChange={onChange} onNotice={notify} />
+        <LazyEditor value={value} onChange={onChange} onNotice={notify} onReady={setView} />
       </div>
 
       {/* `output` is announced politely without having to be asked, which is what a refusal

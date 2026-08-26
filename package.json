@@ -10,9 +10,10 @@
     "preview": "vite preview",
     "lint": "oxlint",
     "check-types": "tsc -b --noEmit",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage",
+    "test": "vitest run --project lib --project ui",
+    "test:browser": "vitest run --project browser",
+    "test:watch": "vitest --project lib --project ui",
+    "test:coverage": "vitest run --project lib --project ui --coverage",
     "format": "oxfmt --write .",
     "format:check": "oxfmt --check .",
     "prepare": "lefthook install || true"
@@ -65,14 +66,17 @@
     "@types/react": "19.2.18",
     "@types/react-dom": "19.2.4",
     "@vitejs/plugin-react": "6.0.5",
+    "@vitest/browser-playwright": "4.1.10",
     "@vitest/coverage-v8": "4.1.10",
     "jsdom": "30.0.1",
     "lefthook": "2.1.10",
     "oxfmt": "0.63.0",
     "oxlint": "1.78.0",
+    "playwright": "1.62.1",
     "typescript": "6.0.3",
     "vite": "8.2.1",
-    "vitest": "4.1.10"
+    "vitest": "4.1.10",
+    "vitest-browser-react": "2.2.0"
   },
   "engines": {
     "node": "24.x"
